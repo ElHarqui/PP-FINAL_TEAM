@@ -123,15 +123,21 @@ viajeros_que_visitaron_pais(Pais, Viajeros) :-
 % Predicado auxiliar para contar géneros y listar viajeros por género
 contar_generos_en_lista([], 0, 0, [], []).
 contar_generos_en_lista([Viajero|Resto], CountFemenino, CountMasculino, ListaFemenino, ListaMasculino) :-
+    % Primero, realiza la llamada recursiva para obtener los valores previos
+    contar_generos_en_lista(Resto, PrevFemenino, PrevMasculino, PrevListaFemenino, PrevListaMasculino),
     genero(Viajero, femenino),
     CountFemenino is PrevFemenino + 1,
+    CountMasculino = PrevMasculino, % El conteo masculino no cambia
     ListaFemenino = [Viajero|PrevListaFemenino],
-    contar_generos_en_lista(Resto, PrevFemenino, CountMasculino, PrevListaFemenino, ListaMasculino).
+    ListaMasculino = PrevListaMasculino.
 contar_generos_en_lista([Viajero|Resto], CountFemenino, CountMasculino, ListaFemenino, ListaMasculino) :-
+    % Primero, realiza la llamada recursiva para obtener los valores previos
+    contar_generos_en_lista(Resto, PrevFemenino, PrevMasculino, PrevListaFemenino, PrevListaMasculino),
     genero(Viajero, masculino),
     CountMasculino is PrevMasculino + 1,
+    CountFemenino = PrevFemenino, % El conteo femenino no cambia
     ListaMasculino = [Viajero|PrevListaMasculino],
-    contar_generos_en_lista(Resto, CountFemenino, PrevMasculino, ListaFemenino, PrevListaMasculino).
+    ListaFemenino = PrevListaFemenino.
 
 
 % Predicado principal para calcular el porcentaje de género que llegaron a un país
