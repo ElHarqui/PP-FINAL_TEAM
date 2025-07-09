@@ -266,16 +266,20 @@ agregar_continente(Pais, Continente) :-
 % ¿Quiénes han pasado por Francia?
 % ?- viaje(Viajero, _, Lista), member(francia, Lista).
 
-% ¿Qué viajeros han pasado por un país específico?
+
+% ¿Qué viajeros han pasado por un país(es) específico(s)?
 viajero_paso_por(Viajero, Pais) :-
     viaje(Viajero, _, Lista),
     member(Pais, Lista).
-
-% ¿Qué viajeros han pasado por dos países específicos en el mismo viaje?
 viajero_paso_por(Viajero, Pais1, Pais2) :-
     viaje(Viajero, _, Lista),
     member(Pais1, Lista),
     member(Pais2, Lista).
+
+% Verifica si un viajero regresó a su punto de origen
+viajero_regreso_origen(Viajero) :-
+    viaje(Viajero, Origen, Lista),
+    last(Lista, Origen).
 
 % Consulta para la nueva pregunta 6: ¿Qué viajeros han visitado países en más de un continente?
 % ?- viajeros_multi_continente(Viajero).
