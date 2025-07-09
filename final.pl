@@ -1,17 +1,17 @@
-2025-I
+% 2025-I
 
-Desarrolle un programa en PROLOG que en base a la imagen considere;
--	Un viajero sale de un país a conocer diferentes países del mundo con la idea de retornar al país de donde partió.
--	Cada vuelo (digamos Perú- Brasil) tiene un mismo costo y duración para todos los clientes, cada vuelo entre países diferentes tiene diferente costo y duración. 
--	Los viajeros pueden visitar de manera consecutiva tantos países como deseen y si desean retornar a su país.
--	En base a dichas condiciones responda las siguientes preguntas;
+% Desarrolle un programa en PROLOG que en base a la imagen considere;
+% -	Un viajero sale de un país a conocer diferentes países del mundo con la idea de retornar al país de donde partió.
+% -	Cada vuelo (digamos Perú- Brasil) tiene un mismo costo y duración para todos los clientes, cada vuelo entre países diferentes tiene diferente costo y duración. 
+% -	Los viajeros pueden visitar de manera consecutiva tantos países como deseen y si desean retornar a su país.
+% -	En base a dichas condiciones responda las siguientes preguntas;
 
-1.	¿Quiénes han salido de viaje y aun no regresan?
-2.	¿Cuánto han gastado los que han salido de Perú?
-3.	¿Qué países han visitado los que han salido de Perú?
-4.	¿Qué porcentaje de los viajeros conocen La India?
-5.	¿Cuántas horas ha viajado Ana?
-6.	Agregar una o varias condiciones y plantee y responda una pregunta
+% 1.	¿Quiénes han salido de viaje y aun no regresan?
+% 2.	¿Cuánto han gastado los que han salido de Perú?
+% 3.	¿Qué países han visitado los que han salido de Perú?
+% 4.	¿Qué porcentaje de los viajeros conocen La India?
+% 5.	¿Cuántas horas ha viajado Ana?
+% 6.	Agregar una o varias condiciones y plantee y responda una pregunta
 
 % filepath: d:\WORKSPACE\PP\EXAMEN FINAL\PP\final.pl
 % --- Datos de vuelos: vuelo(Origen, Destino, Costo, DuracionHoras).
