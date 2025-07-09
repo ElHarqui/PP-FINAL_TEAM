@@ -272,7 +272,7 @@ viajero_paso_por(Viajero, Pais) :-
     member(Pais, Lista).
 
 % ¿Qué viajeros han pasado por dos países específicos en el mismo viaje?
-viajero_paso_por_dos(Viajero, Pais1, Pais2) :-
+viajero_paso_por(Viajero, Pais1, Pais2) :-
     viaje(Viajero, _, Lista),
     member(Pais1, Lista),
     member(Pais2, Lista).
