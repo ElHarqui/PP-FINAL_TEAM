@@ -13,7 +13,7 @@ Desarrolle un programa en PROLOG que en base a la imagen considere;
 5.	¿Cuántas horas ha viajado Ana?
 6.	Agregar una o varias condiciones y plantee y responda una pregunta
 
-% filepath: d:\WORKSPACE\PP\EXAMEN FINAL\final.pl
+% filepath: d:\WORKSPACE\PP\EXAMEN FINAL\PP\final.pl
 % --- Datos de vuelos: vuelo(Origen, Destino, Costo, DuracionHoras).
 vuelo(peru, brasil, 500, 5).
 vuelo(brasil, india, 900, 12).
@@ -144,3 +144,14 @@ agregar_viaje(Viajero, Origen, ListaPaises) :-
 
 % ¿Quiénes han pasado por Francia?
 % ?- viaje(Viajero, _, Lista), member(francia, Lista).
+
+% ¿Qué viajeros han pasado por un país específico?
+viajero_paso_por(Viajero, Pais) :-
+    viaje(Viajero, _, Lista),
+    member(Pais, Lista).
+
+% ¿Qué viajeros han pasado por dos países específicos en el mismo viaje?
+viajero_paso_por_dos(Viajero, Pais1, Pais2) :-
+    viaje(Viajero, _, Lista),
+    member(Pais1, Lista),
+    member(Pais2, Lista).
