@@ -12,7 +12,7 @@
 % 4.	¿Qué porcentaje de los viajeros conocen La India?
 % 5.	¿Cuántas horas ha viajado Ana?
 % 6.	Agregar una o varias condiciones y plantee y responda una pregunta
-
+% Test
 % filepath: d:\WORKSPACE\PP\EXAMEN FINAL\PP\final.pl
 % --- Datos de vuelos: vuelo(Origen, Destino, Costo, DuracionHoras).
 vuelo(peru, brasil, 500, 5).
