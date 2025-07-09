@@ -40,6 +40,19 @@
             flex-wrap: wrap;
         }
         
+        .control-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .control-separator {
+            width: 1px;
+            height: 30px;
+            background: rgba(255,255,255,0.3);
+            margin: 0 10px;
+        }
+        
         .traveler-btn {
             background: linear-gradient(45deg, #FF6B6B, #FF8E8E);
             color: white;
@@ -173,12 +186,18 @@
         </div>
         
         <div class="controls">
-            <button class="traveler-btn" onclick="showRoute('ana')">👩 Ana</button>
-            <button class="traveler-btn" onclick="showRoute('juan')">👨 Juan</button>
-            <button class="traveler-btn" onclick="showRoute('luis')">👨 Luis</button>
-            <button class="traveler-btn" onclick="showRoute('maria')">👩 María</button>
-            <button class="traveler-btn" onclick="showRoute('carla')">👩 Carla</button>
-            <button class="clear-btn" onclick="clearMap()">🗑️ Limpiar</button>
+            <div class="control-group">
+                <button class="traveler-btn" onclick="showRoute('ana')">👩 Ana</button>
+                <button class="traveler-btn" onclick="showRoute('juan')">👨 Juan</button>
+                <button class="traveler-btn" onclick="showRoute('luis')">👨 Luis</button>
+                <button class="traveler-btn" onclick="showRoute('maria')">👩 María</button>
+                <button class="traveler-btn" onclick="showRoute('carla')">👩 Carla</button>
+            </div>
+            <div class="control-separator"></div>
+            <div class="control-group">
+                <button class="clear-btn" onclick="toggleFlightLines()">✈️ Mostrar/Ocultar Vuelos</button>
+                <button class="clear-btn" onclick="clearMap()">🗑️ Limpiar</button>
+            </div>
         </div>
         
         <div class="map-container">
@@ -343,6 +362,25 @@
         let map;
         let currentRoute = null;
         let currentMarkers = [];
+        let flightLines = [];
+
+        // Datos de vuelos disponibles (basados en el código Prolog)
+        const flights = [
+            {from: 'peru', to: 'brasil', cost: 500, duration: 5},
+            {from: 'brasil', to: 'india', cost: 900, duration: 12},
+            {from: 'india', to: 'francia', cost: 800, duration: 10},
+            {from: 'francia', to: 'peru', cost: 700, duration: 11},
+            {from: 'peru', to: 'chile', cost: 200, duration: 2},
+            {from: 'chile', to: 'india', cost: 950, duration: 13},
+            {from: 'peru', to: 'india', cost: 1200, duration: 18},
+            {from: 'peru', to: 'eeuu', cost: 1000, duration: 8},
+            {from: 'eeuu', to: 'francia', cost: 1100, duration: 9},
+            {from: 'francia', to: 'china', cost: 1200, duration: 11},
+            {from: 'china', to: 'australia', cost: 1300, duration: 12},
+            {from: 'australia', to: 'peru', cost: 1400, duration: 15},
+            {from: 'india', to: 'china', cost: 700, duration: 6},
+            {from: 'brasil', to: 'eeuu', cost: 900, duration: 8}
+        ];
 
         // Esperar a que la librería Leaflet se cargue completamente
         document.addEventListener('DOMContentLoaded', function() {
@@ -356,20 +394,24 @@
                 attribution: '© OpenStreetMap contributors'
             }).addTo(map);
 
+            // Dibujar líneas de vuelos disponibles
+            drawFlightLines();
+
             // Inicializar marcadores de países
             Object.entries(countryCoordinates).forEach(([country, coords]) => {
                 const countryMarker = L.circleMarker(coords, {
-                    radius: 4,
-                    fillColor: '#ddd',
-                    color: '#999',
-                    weight: 1,
-                    opacity: 0.8,
-                    fillOpacity: 0.6
+                    radius: 6,
+                    fillColor: '#3498db',
+                    color: '#2c3e50',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8
                 }).addTo(map);
                 
                 countryMarker.bindTooltip(country.charAt(0).toUpperCase() + country.slice(1), {
                     permanent: false,
-                    direction: 'top'
+                    direction: 'top',
+                    className: 'country-tooltip'
                 });
             });
 
@@ -384,8 +426,76 @@
                         stroke-dashoffset: 0;
                     }
                 }
+                .country-tooltip {
+                    background: rgba(0,0,0,0.8);
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    padding: 4px 8px;
+                    font-size: 12px;
+                }
+                .flight-line {
+                    cursor: pointer;
+                }
             `;
             document.head.appendChild(style);
+        }
+
+        function drawFlightLines() {
+            flights.forEach(flight => {
+                const fromCoords = countryCoordinates[flight.from];
+                const toCoords = countryCoordinates[flight.to];
+                
+                if (fromCoords && toCoords) {
+                    const line = L.polyline([fromCoords, toCoords], {
+                        color: '#95a5a6',
+                        weight: 1,
+                        opacity: 0.4,
+                        className: 'flight-line'
+                    }).addTo(map);
+                    
+                    // Popup con información del vuelo
+                    line.bindPopup(`
+                        <div style="text-align: center; font-family: Arial, sans-serif; min-width: 200px;">
+                            <h4 style="margin: 0 0 10px 0; color: #2c3e50;">✈️ Vuelo Disponible</h4>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0;">
+                                <span style="font-weight: bold; color: #3498db;">${flight.from.toUpperCase()}</span>
+                                <span style="color: #95a5a6;">➡️</span>
+                                <span style="font-weight: bold; color: #e74c3c;">${flight.to.toUpperCase()}</span>
+                            </div>
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 10px 0;">
+                                <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                                    <span>💰 Costo:</span>
+                                    <strong>${flight.cost}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                                    <span>⏱️ Duración:</span>
+                                    <strong>${flight.duration}h</strong>
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                    
+                    // Efecto hover
+                    line.on('mouseover', function() {
+                        this.setStyle({
+                            color: '#3498db',
+                            weight: 3,
+                            opacity: 0.8
+                        });
+                    });
+                    
+                    line.on('mouseout', function() {
+                        this.setStyle({
+                            color: '#95a5a6',
+                            weight: 1,
+                            opacity: 0.4
+                        });
+                    });
+                    
+                    flightLines.push(line);
+                }
+            });
         }
 
         // Datos de los viajeros basados en el código Prolog
