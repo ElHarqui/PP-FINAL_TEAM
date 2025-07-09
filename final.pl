@@ -34,7 +34,7 @@ vuelo(brasil, eeuu, 900, 8).
 viaje(ana, peru, [peru, brasil, india, francia]). % No regresa
 viaje(juan, peru, [peru, chile, india, francia, peru]). % Regresa
 viaje(luis, brasil, [brasil, india, francia, china, australia, brasil]). % Regresa
-viaje(maria, peru, [peru, eeuu, francia, china, australia, peru]). % Regresa
+viaje(maria, peru, [peru, eeuu, francia, china, india, australia, peru]). % Regresa
 viaje(carla, chile, [chile, brasil, eeuu, francia, india]). % No regresa
 
 % --- Nuevos hechos: género(Viajero, Genero).
@@ -101,6 +101,33 @@ china_y_australia(Viajero) :-
     viaje(Viajero, _, Lista),
     member(china, Lista),
     member(australia, Lista).
+
+% Respuesta dinámica a la 2, 3, 4, y 6
+
+% --- Predicados dinámicos generales para las preguntas ---
+:- dynamic gasto_detallado/4.
+:- dynamic paises_visitados_por_origen/3.
+:- dynamic porcentaje_viajeros_conocen_pais/3.
+:- dynamic viajeros_visitaron_paises_especificos/3.
+
+% 2. ¿Cuánto han gastado los que han salido de un PaísOrigen específico? (detalle por tramo y total)
+gasto_detallado(Viajero, PaisOrigen, Tramos, GastoTotal) :-
+    viaje(Viajero, PaisOrigen, Lista),
+    tramos_y_gastos(Lista, Tramos, GastoTotal).
+
+% 3. ¿Qué países han visitado los que han salido de un PaísOrigen específico? (únicos, sin repetir)
+paises_visitados_por_origen(Viajero, PaisOrigen, PaisesUnicos) :-
+    viaje(Viajero, PaisOrigen, Lista),
+    list_to_set(Lista, PaisesUnicos).
+
+% 4. ¿Qué porcentaje de los viajeros conocen un País específico? (con lista de nombres)
+porcentaje_viajeros_conocen_pais(Pais, Porcentaje, Lista) :-
+    findall(V, viaje(V, _, _), Todos),
+    findall(V, (viaje(V, _, L), member(Pais, L)), ConocenPais),
+    length(Todos, Total),
+    length(ConocenPais, Conocen),
+    (Total > 0 -> Porcentaje is (Conocen * 100) / Total ; Porcentaje = 0),
+    Lista = ConocenPais.
 
 % Predicado auxiliar para obtener los continentes visitados por un viajero
 continentes_visitados(Viajero, ContinentesUnicos) :-
@@ -171,7 +198,10 @@ agregar_vuelo(Origen, Destino, Costo, Duracion) :-
 agregar_punto_viaje(Viajero, NuevoPais) :-
     viaje(Viajero, Origen, ListaVieja),
     last(ListaVieja, Ultimo),
-    vuelo(Ultimo, NuevoPais, _, _), % Solo permite si hay vuelo directo
+    % Vuelo bidireccional
+    (vuelo(Ultimo, NuevoPais, _, _) ; vuelo(NuevoPais, Ultimo, _, _)),
+    % Vuelo unidireccional
+    % vuelo(Ultimo, NuevoPais, _, _), % Solo permite si hay vuelo directo
     append(ListaVieja, [NuevoPais], ListaNueva),
     retract(viaje(Viajero, Origen, ListaVieja)),
     assertz(viaje(Viajero, Origen, ListaNueva)).
@@ -248,3 +278,4 @@ viajero_paso_por_dos(Viajero, Pais1, Pais2) :-
 % Consulta para la nueva funcionalidad: Porcentaje de género que llegaron a un país
 % Ejemplo: ¿Qué porcentaje de viajeros femeninos y masculinos han visitado India?
 % ?- porcentaje_genero_llegan_pais(india, PorcentajeFemenino, PorcentajeMasculino, ListaFemenino, ListaMasculino).
+
