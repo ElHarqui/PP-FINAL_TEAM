@@ -85,10 +85,62 @@ china_y_australia(Viajero) :-
     member(china, Lista),
     member(australia, Lista).
 
-% Consultas ejemplo:
-% ?- no_regresan_detalle(V, P).
-% ?- gasto_peru_detallado(V, Tramos, Total).
-% ?- paises_visitados_peru(V, Paises).
+% --- Permitir agregar vuelos y puntos de viaje dinámicamente ---
+
+:- dynamic vuelo/4.
+:- dynamic viaje/3.
+
+% Agregar un nuevo vuelo entre dos países
+agregar_vuelo(Origen, Destino, Costo, Duracion) :-
+    \+ vuelo(Origen, Destino, _, _),
+    assertz(vuelo(Origen, Destino, Costo, Duracion)).
+
+% Agregar un nuevo punto de viaje a un viajero existente (al final de la lista)
+agregar_punto_viaje(Viajero, NuevoPais) :-
+    viaje(Viajero, Origen, ListaVieja),
+    last(ListaVieja, Ultimo),
+    vuelo(Ultimo, NuevoPais, _, _), % Solo permite si hay vuelo directo
+    append(ListaVieja, [NuevoPais], ListaNueva),
+    retract(viaje(Viajero, Origen, ListaVieja)),
+    assertz(viaje(Viajero, Origen, ListaNueva)).
+
+% Agregar un nuevo viaje completo para un viajero
+agregar_viaje(Viajero, Origen, ListaPaises) :-
+    \+ viaje(Viajero, _, _),
+    assertz(viaje(Viajero, Origen, ListaPaises)).
+
+% Ejemplo de uso:
+% ?- agregar_vuelo(peru, mexico, 800, 7).
+% ?- agregar_punto_viaje(ana, china).
+% ?- agregar_viaje(sofia, peru, [peru, brasil, india, china, australia, peru]).
+
+% Más consultas de ejemplo:
+% ¿Quiénes no han regresado y en qué país están?
+% ?- no_regresan_detalle(Viajero, PaisActual).
+
+% ¿Cuánto gastó cada viajero que salió de Perú? (detalle de tramos y total)
+% ?- gasto_peru_detallado(Viajero, Tramos, GastoTotal).
+
+% ¿Qué países únicos visitó cada viajero que salió de Perú?
+% ?- paises_visitados_peru(Viajero, PaisesUnicos).
+
+% ¿Qué porcentaje de los viajeros conocen La India y quiénes son?
 % ?- porcentaje_india(Porcentaje, Lista).
-% ?- horas_viajadas_detallado(ana, Tramos, Total).
-% ?- china_y_australia(V).
+
+% ¿Cuántas horas ha viajado Ana? (detalle de tramos y total)
+% ?- horas_viajadas_detallado(ana, Tramos, HorasTotal).
+
+% ¿Quiénes han visitado China y Australia en el mismo viaje?
+% ?- china_y_australia(Viajero).
+
+% ¿Cuántos viajeros han visitado más de 3 países?
+% ?- viaje(Viajero, _, Lista), list_to_set(Lista, Set), length(Set, N), N > 3.
+
+% ¿Cuál es el país final de cada viajero?
+% ?- viaje(Viajero, _, Lista), last(Lista, PaisFinal).
+
+% ¿Cuántos vuelos ha tomado cada viajero?
+% ?- viaje(Viajero, _, Lista), length(Lista, N), Vuelos is N-1.
+
+% ¿Quiénes han pasado por Francia?
+% ?- viaje(Viajero, _, Lista), member(francia, Lista).
