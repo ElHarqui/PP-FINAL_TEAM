@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa de Rutas de Viajeros</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .traveler-btn {
+            background: linear-gradient(45deg, #FF6B6B, #FF8E8E);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .traveler-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .traveler-btn.active {
+            background: linear-gradient(45deg, #4ECDC4, #44A08D);
+            transform: translateY(-2px);
+        }
+        
+        .clear-btn {
+            background: linear-gradient(45deg, #FFA726, #FF7043);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .clear-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .map-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+            height: 600px;
+            position: relative;
+        }
+        
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+        
+        .info-panel {
+            background: white;
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+        
+        .route-info {
+            display: none;
+        }
+        
+        .route-info.active {
+            display: block;
+        }
+        
+        .route-info h3 {
+            color: #333;
+            margin-top: 0;
+            font-size: 1.5em;
+        }
+        
+        .route-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-card h4 {
+            margin: 0 0 10px 0;
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        .stat-card .value {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        .countries-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        
+        .country-tag {
+            background: #f0f0f0;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            color: #333;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗺️ Rutas de Viajeros</h1>
+            <p>Explora las aventuras de cada viajero por el mundo</p>
+        </div>
+        
+        <div class="controls">
+            <button class="traveler-btn" onclick="showRoute('ana')">👩 Ana</button>
+            <button class="traveler-btn" onclick="showRoute('juan')">👨 Juan</button>
+            <button class="traveler-btn" onclick="showRoute('luis')">👨 Luis</button>
+            <button class="traveler-btn" onclick="showRoute('maria')">👩 María</button>
+            <button class="traveler-btn" onclick="showRoute('carla')">👩 Carla</button>
+            <button class="clear-btn" onclick="clearMap()">🗑️ Limpiar</button>
+        </div>
+        
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+        
+        <div class="info-panel">
+            <div id="default-info">
+                <h3>Bienvenido al Mapa de Rutas</h3>
+                <p>Selecciona un viajero para ver su ruta completa, países visitados, costos y estadísticas del viaje.</p>
+            </div>
+            
+            <div id="route-info-ana" class="route-info">
+                <h3>🌟 Ruta de Ana</h3>
+                <div class="route-details">
+                    <div class="stat-card">
+                        <h4>Estado</h4>
+                        <div class="value">En Viaje</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Países Visitados</h4>
+                        <div class="value">4</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Costo Total</h4>
+                        <div class="value">$2,200</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Horas de Vuelo</h4>
+                        <div class="value">27h</div>
+                    </div>
+                </div>
+                <div class="countries-list">
+                    <span class="country-tag">🇵🇪 Perú</span>
+                    <span class="country-tag">🇧🇷 Brasil</span>
+                    <span class="country-tag">🇮🇳 India</span>
+                    <span class="country-tag">🇫🇷 Francia</span>
+                </div>
+            </div>
+            
+            <div id="route-info-juan" class="route-info">
+                <h3>🌟 Ruta de Juan</h3>
+                <div class="route-details">
+                    <div class="stat-card">
+                        <h4>Estado</h4>
+                        <div class="value">Regresó</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Países Visitados</h4>
+                        <div class="value">4</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Costo Total</h4>
+                        <div class="value">$2,650</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Horas de Vuelo</h4>
+                        <div class="value">36h</div>
+                    </div>
+                </div>
+                <div class="countries-list">
+                    <span class="country-tag">🇵🇪 Perú</span>
+                    <span class="country-tag">🇨🇱 Chile</span>
+                    <span class="country-tag">🇮🇳 India</span>
+                    <span class="country-tag">🇫🇷 Francia</span>
+                </div>
+            </div>
+            
+            <div id="route-info-luis" class="route-info">
+                <h3>🌟 Ruta de Luis</h3>
+                <div class="route-details">
+                    <div class="stat-card">
+                        <h4>Estado</h4>
+                        <div class="value">Regresó</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Países Visitados</h4>
+                        <div class="value">5</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Costo Total</h4>
+                        <div class="value">$4,200</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Horas de Vuelo</h4>
+                        <div class="value">52h</div>
+                    </div>
+                </div>
+                <div class="countries-list">
+                    <span class="country-tag">🇧🇷 Brasil</span>
+                    <span class="country-tag">🇮🇳 India</span>
+                    <span class="country-tag">🇫🇷 Francia</span>
+                    <span class="country-tag">🇨🇳 China</span>
+                    <span class="country-tag">🇦🇺 Australia</span>
+                </div>
+            </div>
+            
+            <div id="route-info-maria" class="route-info">
+                <h3>🌟 Ruta de María</h3>
+                <div class="route-details">
+                    <div class="stat-card">
+                        <h4>Estado</h4>
+                        <div class="value">Regresó</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Países Visitados</h4>
+                        <div class="value">6</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Costo Total</h4>
+                        <div class="value">$6,200</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Horas de Vuelo</h4>
+                        <div class="value">69h</div>
+                    </div>
+                </div>
+                <div class="countries-list">
+                    <span class="country-tag">🇵🇪 Perú</span>
+                    <span class="country-tag">🇺🇸 EE.UU.</span>
+                    <span class="country-tag">🇫🇷 Francia</span>
+                    <span class="country-tag">🇨🇳 China</span>
+                    <span class="country-tag">🇮🇳 India</span>
+                    <span class="country-tag">🇦🇺 Australia</span>
+                </div>
+            </div>
+            
+            <div id="route-info-carla" class="route-info">
+                <h3>🌟 Ruta de Carla</h3>
+                <div class="route-details">
+                    <div class="stat-card">
+                        <h4>Estado</h4>
+                        <div class="value">En Viaje</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Países Visitados</h4>
+                        <div class="value">5</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Costo Total</h4>
+                        <div class="value">$3,850</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Horas de Vuelo</h4>
+                        <div class="value">38h</div>
+                    </div>
+                </div>
+                <div class="countries-list">
+                    <span class="country-tag">🇨🇱 Chile</span>
+                    <span class="country-tag">🇧🇷 Brasil</span>
+                    <span class="country-tag">🇺🇸 EE.UU.</span>
+                    <span class="country-tag">🇫🇷 Francia</span>
+                    <span class="country-tag">🇮🇳 India</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Variables globales
+        let map;
+        let currentRoute = null;
+        let currentMarkers = [];
+
+        // Esperar a que la librería Leaflet se cargue completamente
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeMap();
+        });
+
+        function initializeMap() {
+            // Inicializar el mapa
+            map = L.map('map').setView([20, 0], 2);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Inicializar marcadores de países
+            Object.entries(countryCoordinates).forEach(([country, coords]) => {
+                const countryMarker = L.circleMarker(coords, {
+                    radius: 4,
+                    fillColor: '#ddd',
+                    color: '#999',
+                    weight: 1,
+                    opacity: 0.8,
+                    fillOpacity: 0.6
+                }).addTo(map);
+                
+                countryMarker.bindTooltip(country.charAt(0).toUpperCase() + country.slice(1), {
+                    permanent: false,
+                    direction: 'top'
+                });
+            });
+
+            // Añadir estilos CSS para la animación
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes dash {
+                    from {
+                        stroke-dashoffset: 100%;
+                    }
+                    to {
+                        stroke-dashoffset: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // Datos de los viajeros basados en el código Prolog
+        const travelers = {
+            ana: {
+                name: "Ana",
+                origin: "peru",
+                route: ["peru", "brasil", "india", "francia"],
+                returned: false,
+                color: "#FF6B6B"
+            },
+            juan: {
+                name: "Juan",
+                origin: "peru", 
+                route: ["peru", "chile", "india", "francia", "peru"],
+                returned: true,
+                color: "#4ECDC4"
+            },
+            luis: {
+                name: "Luis",
+                origin: "brasil",
+                route: ["brasil", "india", "francia", "china", "australia", "brasil"],
+                returned: true,
+                color: "#45B7D1"
+            },
+            maria: {
+                name: "María",
+                origin: "peru",
+                route: ["peru", "eeuu", "francia", "china", "india", "australia", "peru"],
+                returned: true,
+                color: "#96CEB4"
+            },
+            carla: {
+                name: "Carla",
+                origin: "chile",
+                route: ["chile", "brasil", "eeuu", "francia", "india"],
+                returned: false,
+                color: "#FFEAA7"
+            }
+        };
+
+        // Coordenadas de los países
+        const countryCoordinates = {
+            peru: [-9.19, -75.0152],
+            brasil: [-14.235, -51.9253],
+            india: [20.5937, 78.9629],
+            francia: [46.6034, 1.8883],
+            chile: [-35.6751, -71.5430],
+            eeuu: [37.0902, -95.7129],
+            china: [35.8617, 104.1954],
+            australia: [-25.2744, 133.7751]
+        };
+
+        function showRoute(travelerKey) {
+            if (!map) {
+                console.error('Mapa no inicializado');
+                return;
+            }
+            clearMap();
+            
+            const traveler = travelers[travelerKey];
+            if (!traveler) return;
+
+            // Actualizar botones
+            document.querySelectorAll('.traveler-btn').forEach(btn => btn.classList.remove('active'));
+            const clickedButton = document.querySelector(`[onclick="showRoute('${travelerKey}')"]`);
+            if (clickedButton) {
+                clickedButton.classList.add('active');
+            }
+
+            // Mostrar información del viajero
+            document.getElementById('default-info').style.display = 'none';
+            document.querySelectorAll('.route-info').forEach(info => info.classList.remove('active'));
+            document.getElementById(`route-info-${travelerKey}`).classList.add('active');
+
+            // Crear marcadores y líneas
+            const routeCoordinates = [];
+            const bounds = L.latLngBounds();
+
+            traveler.route.forEach((country, index) => {
+                const coords = countryCoordinates[country];
+                if (coords) {
+                    routeCoordinates.push(coords);
+                    bounds.extend(coords);
+
+                    // Crear marcador
+                    const isStart = index === 0;
+                    const isEnd = index === traveler.route.length - 1;
+                    const isCurrent = !traveler.returned && isEnd;
+                    
+                    let iconColor = traveler.color;
+                    let iconSymbol = '📍';
+                    
+                    if (isStart) {
+                        iconSymbol = '🏠';
+                        iconColor = '#28a745';
+                    } else if (isCurrent) {
+                        iconSymbol = '🧳';
+                        iconColor = '#ffc107';
+                    } else if (isEnd && traveler.returned) {
+                        iconSymbol = '🏁';
+                        iconColor = '#dc3545';
+                    }
+
+                    const marker = L.marker(coords, {
+                        icon: L.divIcon({
+                            className: 'custom-marker',
+                            html: `<div style="background: ${iconColor}; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">${iconSymbol}</div>`,
+                            iconSize: [30, 30],
+                            iconAnchor: [15, 15]
+                        })
+                    }).addTo(map);
+
+                    marker.bindPopup(`
+                        <div style="text-align: center; font-family: Arial, sans-serif;">
+                            <h4 style="margin: 0 0 10px 0; color: #333;">${country.charAt(0).toUpperCase() + country.slice(1)}</h4>
+                            <p style="margin: 5px 0; color: #666;">
+                                ${isStart ? '🏠 Origen' : isCurrent ? '🧳 Ubicación Actual' : isEnd && traveler.returned ? '🏁 Destino Final' : `📍 Parada ${index}`}
+                            </p>
+                            <p style="margin: 5px 0; color: #666;"><strong>Viajero:</strong> ${traveler.name}</p>
+                        </div>
+                    `);
+                    
+                    currentMarkers.push(marker);
+                }
+            });
+
+            // Crear línea de ruta
+            if (routeCoordinates.length > 1) {
+                currentRoute = L.polyline(routeCoordinates, {
+                    color: traveler.color,
+                    weight: 4,
+                    opacity: 0.8,
+                    dashArray: traveler.returned ? null : '10, 10'
+                }).addTo(map);
+
+                // Añadir animación a la línea
+                currentRoute.on('add', function() {
+                    const pathLength = this.getElement().getTotalLength();
+                    this.getElement().style.strokeDasharray = pathLength;
+                    this.getElement().style.strokeDashoffset = pathLength;
+                    this.getElement().style.animation = 'dash 3s ease-in-out forwards';
+                });
+            }
+
+            // Ajustar vista del mapa
+            if (bounds.isValid()) {
+                map.fitBounds(bounds, { padding: [50, 50] });
+            }
+        }
+
+        function clearMap() {
+            if (!map) {
+                console.error('Mapa no inicializado');
+                return;
+            }
+            if (currentRoute) {
+                map.removeLayer(currentRoute);
+                currentRoute = null;
+            }
+            
+            currentMarkers.forEach(marker => map.removeLayer(marker));
+            currentMarkers = [];
+            
+            document.querySelectorAll('.traveler-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('default-info').style.display = 'block';
+            document.querySelectorAll('.route-info').forEach(info => info.classList.remove('active'));
+            
+            map.setView([20, 0], 2);
+        }
+    </script>
+</body>
+</html>

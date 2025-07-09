@@ -54,6 +54,12 @@ continente(eeuu, america_norte).
 continente(china, asia).
 continente(australia, oceania).
 
+listar_paises(PaisesUnicos) :-
+   findall(Pais, (vuelo(Pais, _, _, _) ; vuelo(_, Pais, _, _)), TodosLosPaises),
+   write('Lista completa de TodosLosPaises: '), write_term(TodosLosPaises, [quoted(true), max_depth(0)]), nl, % <--- Línea añadida
+   list_to_set(TodosLosPaises, PaisesUnicos),
+   write('Lista completa de PaisesUnicos: '), write_term(PaisesUnicos, [quoted(true), max_depth(0)]), nl. % <--- Línea añadida para PaisesUnicos
+
 % 1. ¿Quiénes han salido de viaje y aun no regresan? (con detalle de país actual)
 no_regresan_detalle(Viajero, PaisActual) :-
     viaje(Viajero, PaisOrigen, Lista),
@@ -220,7 +226,6 @@ agregar_genero(Viajero, Genero) :-
 agregar_continente(Pais, Continente) :-
     \+ continente(Pais, _),
     assertz(continente(Pais, Continente)).
-
 
 
 % Ejemplo de uso:
