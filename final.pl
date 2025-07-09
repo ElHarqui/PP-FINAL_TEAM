@@ -267,10 +267,17 @@ agregar_continente(Pais, Continente) :-
 % ?- viaje(Viajero, _, Lista), member(francia, Lista).
 
 
-% ¿Qué viajeros han pasado por un país(es) específico(s)?
+
+% =====================
+% CONSULTAS GENERALES
+% =====================
+
+% ¿Qué viajeros han pasado por un país específico?
 viajero_paso_por(Viajero, Pais) :-
     viaje(Viajero, _, Lista),
     member(Pais, Lista).
+
+% ¿Qué viajeros han pasado por dos países específicos en el mismo viaje?
 viajero_paso_por(Viajero, Pais1, Pais2) :-
     viaje(Viajero, _, Lista),
     member(Pais1, Lista),
