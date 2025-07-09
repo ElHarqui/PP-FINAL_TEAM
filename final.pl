@@ -65,7 +65,7 @@ porcentaje_india(Porcentaje, Lista) :-
     findall(V, (viaje(V, _, L), member(india, L)), ConocenIndia),
     length(Todos, Total),
     length(ConocenIndia, Conocen),
-    Porcentaje is (Conocen * 100) / Total,
+    (Total > 0 -> Porcentaje is (Conocen * 100) / Total ; Porcentaje = 0),
     Lista = ConocenIndia.
 
 % 5. ¿Cuántas horas ha viajado Ana? (detalle por tramo y total)
