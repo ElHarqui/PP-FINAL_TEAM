@@ -37,6 +37,23 @@ viaje(luis, brasil, [brasil, india, francia, china, australia, brasil]). % Regre
 viaje(maria, peru, [peru, eeuu, francia, china, australia, peru]). % Regresa
 viaje(carla, chile, [chile, brasil, eeuu, francia, india]). % No regresa
 
+% --- Nuevos hechos: género(Viajero, Genero).
+genero(ana, femenino).
+genero(juan, masculino).
+genero(luis, masculino).
+genero(maria, femenino).
+genero(carla, femenino).
+
+% --- Nuevos hechos: continente(Pais, Continente).
+continente(peru, america_sur).
+continente(brasil, america_sur).
+continente(india, asia).
+continente(francia, europa).
+continente(chile, america_sur).
+continente(eeuu, america_norte).
+continente(china, asia).
+continente(australia, oceania).
+
 % 1. ¿Quiénes han salido de viaje y aun no regresan? (con detalle de país actual)
 no_regresan_detalle(Viajero, PaisActual) :-
     viaje(Viajero, PaisOrigen, Lista),
@@ -85,10 +102,59 @@ china_y_australia(Viajero) :-
     member(china, Lista),
     member(australia, Lista).
 
+% Predicado auxiliar para obtener los continentes visitados por un viajero
+continentes_visitados(Viajero, ContinentesUnicos) :-
+    viaje(Viajero, _, ListaPaises),
+    findall(C, (member(P, ListaPaises), continente(P, C)), Continentes),
+    list_to_set(Continentes, ContinentesUnicos).
+
+% Predicado principal para la pregunta 6
+viajeros_multi_continente(Viajero) :-
+    continentes_visitados(Viajero, Continentes),
+    length(Continentes, NumContinentes),
+    NumContinentes > 1.
+
+% --- Nueva funcionalidad: Porcentaje de género que llegaron a un país ---
+
+% Predicado auxiliar para encontrar todos los viajeros que pasaron por un país
+viajeros_que_visitaron_pais(Pais, Viajeros) :-
+    findall(V, (viaje(V, _, ListaPaises), member(Pais, ListaPaises)), Viajeros).
+
+% Predicado auxiliar para contar géneros y listar viajeros por género
+contar_generos_en_lista([], 0, 0, [], []).
+contar_generos_en_lista([Viajero|Resto], CountFemenino, CountMasculino, ListaFemenino, ListaMasculino) :-
+    genero(Viajero, femenino),
+    CountFemenino is PrevFemenino + 1,
+    ListaFemenino = [Viajero|PrevListaFemenino],
+    contar_generos_en_lista(Resto, PrevFemenino, CountMasculino, PrevListaFemenino, ListaMasculino).
+contar_generos_en_lista([Viajero|Resto], CountFemenino, CountMasculino, ListaFemenino, ListaMasculino) :-
+    genero(Viajero, masculino),
+    CountMasculino is PrevMasculino + 1,
+    ListaMasculino = [Viajero|PrevListaMasculino],
+    contar_generos_en_lista(Resto, CountFemenino, PrevMasculino, ListaFemenino, PrevListaMasculino).
+
+
+% Predicado principal para calcular el porcentaje de género que llegaron a un país
+% porcentaje_genero_llegan_pais(Pais, PorcentajeFemenino, PorcentajeMasculino, ListaFemenino, ListaMasculino)
+porcentaje_genero_llegan_pais(Pais, PorcentajeFemenino, PorcentajeMasculino, ListaFemenino, ListaMasculino) :-
+    viajeros_que_visitaron_pais(Pais, Viajeros),
+    list_to_set(Viajeros, ViajerosUnicos), % Asegurarse de contar cada viajero una vez
+    contar_generos_en_lista(ViajerosUnicos, CountFemenino, CountMasculino, ListaFemenino, ListaMasculino),
+    TotalViajeros is CountFemenino + CountMasculino,
+    (TotalViajeros > 0 ->
+        PorcentajeFemenino is (CountFemenino * 100) / TotalViajeros,
+        PorcentajeMasculino is (CountMasculino * 100) / TotalViajeros
+    ;
+        PorcentajeFemenino = 0,
+        PorcentajeMasculino = 0
+    ).
+
 % --- Permitir agregar vuelos y puntos de viaje dinámicamente ---
 
 :- dynamic vuelo/4.
 :- dynamic viaje/3.
+:- dynamic genero/2. % Hacer dinámico el predicado genero
+:- dynamic continente/2. % Hacer dinámico el predicado continente
 
 % Agregar un nuevo vuelo entre dos países
 agregar_vuelo(Origen, Destino, Costo, Duracion) :-
@@ -109,10 +175,24 @@ agregar_viaje(Viajero, Origen, ListaPaises) :-
     \+ viaje(Viajero, _, _),
     assertz(viaje(Viajero, Origen, ListaPaises)).
 
+% Agregar un nuevo género para un viajero
+agregar_genero(Viajero, Genero) :-
+    \+ genero(Viajero, _),
+    assertz(genero(Viajero, Genero)).
+
+% Agregar un nuevo continente para un país
+agregar_continente(Pais, Continente) :-
+    \+ continente(Pais, _),
+    assertz(continente(Pais, Continente)).
+
+
+
 % Ejemplo de uso:
 % ?- agregar_vuelo(peru, mexico, 800, 7).
 % ?- agregar_punto_viaje(ana, china).
 % ?- agregar_viaje(sofia, peru, [peru, brasil, india, china, australia, peru]).
+% ?- agregar_genero(sofia, femenino).
+% ?- agregar_continente(mexico, america_norte).
 
 % Más consultas de ejemplo:
 % ¿Quiénes no han regresado y en qué país están?
@@ -155,3 +235,10 @@ viajero_paso_por_dos(Viajero, Pais1, Pais2) :-
     viaje(Viajero, _, Lista),
     member(Pais1, Lista),
     member(Pais2, Lista).
+
+% Consulta para la nueva pregunta 6: ¿Qué viajeros han visitado países en más de un continente?
+% ?- viajeros_multi_continente(Viajero).
+
+% Consulta para la nueva funcionalidad: Porcentaje de género que llegaron a un país
+% Ejemplo: ¿Qué porcentaje de viajeros femeninos y masculinos han visitado India?
+% ?- porcentaje_genero_llegan_pais(india, PorcentajeFemenino, PorcentajeMasculino, ListaFemenino, ListaMasculino).
