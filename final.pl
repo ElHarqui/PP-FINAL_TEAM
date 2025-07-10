@@ -44,6 +44,32 @@ genero(luis, masculino).
 genero(maria, femenino).
 genero(carla, femenino).
 
+% --- Nuevos hechos: progenitor(Padre, hijo)
+progenitor(luis, juan).
+progenitor(ana, juan).
+progenitor(luis, maria).
+progenitor(carla, maria).
+
+% --- Nuevos hechos: pais(Viajero, PaisNatal)
+
+pais(ana, peru).
+pais(juan, peru).
+pais(luis, brasil).
+pais(maria, peru).
+pais(carla, chile).
+
+% --- Nuevos hechos: idioma_nativo(Pais, Idioma).
+
+idioma_nativo(peru, espanol).
+idioma_nativo(brasil, portugues).
+idioma_nativo(india, hindi).
+idioma_nativo(francia, frances).
+idioma_nativo(chile, espanol).
+idioma_nativo(eeuu, ingles).
+idioma_nativo(china, chino).
+idioma_nativo(australia, ingles).
+
+
 % --- Nuevos hechos: continente(Pais, Continente).
 continente(peru, america_sur).
 continente(brasil, america_sur).
@@ -53,6 +79,35 @@ continente(chile, america_sur).
 continente(eeuu, america_norte).
 continente(china, asia).
 continente(australia, oceania).
+
+idioma_natal(Persona, Idioma):-
+    pais(Persona, Pais),
+    idioma_nativo(Pais, Idioma).
+
+hereda_idioma_natal(Hijo, Idioma):-
+    progenitor(Progenitor, Hijo),
+    idioma_natal(Progenitor, Idioma).
+
+idiomas_totales(Persona, IdiomasFinales):-
+    idioma_natal(Persona, IdiomaNatal),
+    findall(IdiomaHeredado, hereda_idioma_natal(Persona, IdiomaHeredado), IdiomasHeredados),
+    append(IdiomasAprendidos, IdiomasHeredados),
+    ListaConDuplicados = [IdiomaNatal | OtrosIdiomas],
+    list_to_set(ListaConDuplicados, IdiomasFinales).
+
+sabe_idioma(Persona, Idioma):-
+    idiomas_totales(Persona, ListaDeIdiomas),
+    member(Idioma, ListaDeIdiomas).
+
+sabe_algun_idioma(Persona, [Idioma|_]) :-
+    sabe_idioma(Persona, Idioma), !.
+sabe_algun_idioma(Persona, [_|Resto]) :-
+    sabe_algun_idioma(Persona, Resto).
+
+sabe_todos_los_idiomas(_, []).
+sabe_todos_los_idiomas(Persona, [Idioma|Resto]) :-
+    sabe_idioma(Persona, Idioma),
+    sabe_todos_los_idiomas(Persona, Resto).
 
 listar_paises(PaisesUnicos) :-
    findall(Pais, (vuelo(Pais, _, _, _) ; vuelo(_, Pais, _, _)), TodosLosPaises),
