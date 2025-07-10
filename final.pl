@@ -150,6 +150,18 @@ tramos_y_gastos([A,B|R], [(A,B,Costo)|Tramos], Total) :-
 
 % Versión que imprime bonito el detalle de gasto de todos los viajeros y el total
 gasto_detallado_lista(PaisOrigen) :-
+    gasto_detallado_lista(PaisOrigen, Lista, GastoTotalTodos),
+    write('==== Gasto detallado de viajeros que salieron de '), write(PaisOrigen), writeln(' ===='), nl,
+    forall(member(Viajero-Tramos-Gasto, Lista), (
+        write('Viajero: '), write(Viajero), nl,
+        write('  Tramos: '), write(Tramos), nl,
+        write('  Gasto total: '), write(Gasto), nl,
+        writeln('---------------------------------')
+    )),
+    write('Gasto total de todos los viajeros: '), writeln(GastoTotalTodos).
+
+% Versión que devuelve la lista y el total como variables (útil para pruebas y lógica)
+gasto_detallado_lista(PaisOrigen, Lista, GastoTotalTodos) :-
     findall(
         Viajero-Tramos-GastoViajero,
         (viaje(Viajero, PaisOrigen, L), tramos_y_gastos(L, Tramos, GastoViajero)),
@@ -159,15 +171,7 @@ gasto_detallado_lista(PaisOrigen) :-
         (viaje(Viajero, PaisOrigen, L), tramos_y_gastos(L, _, GastoViajero)),
         Gastos
     ),
-    sumlist(Gastos, GastoTotalTodos),
-    write('==== Gasto detallado de viajeros que salieron de '), write(PaisOrigen), writeln(' ===='),
-    forall(member(Viajero-Tramos-Gasto, Lista), (
-        write('Viajero: '), write(Viajero), nl,
-        write('  Tramos: '), write(Tramos), nl,
-        write('  Gasto total: '), write(Gasto), nl,
-        writeln('---------------------------------')
-    )),
-    write('Gasto total de todos los viajeros: '), writeln(GastoTotalTodos).
+    sumlist(Gastos, GastoTotalTodos).
 
 % Mantener el predicado individual para compatibilidad, pero sugerir el uso del de lista
 gasto_detallado(Viajero, PaisOrigen, Tramos, GastoTotal) :-
@@ -180,13 +184,13 @@ paises_visitados_por_origen(Viajero, PaisOrigen, PaisesUnicos) :-
     list_to_set(Lista, PaisesUnicos).
 
 % 4. ¿Qué porcentaje de los viajeros conocen un País específico? (con lista de nombres)
-porcentaje_viajeros_conocen_pais(Pais, Porcentaje, Lista) :-
+porcentaje_viajeros_conocen_pais(Pais, Porcentaje, ListaUnica) :-
     findall(V, viaje(V, _, _), Todos),
-    findall(V, (viaje(V, _, L), member(Pais, L)), ConocenPais),
+    findall(V, (viaje(V, _, L), member(Pais, L)), ConocenPaisConDuplicados),
+    list_to_set(ConocenPaisConDuplicados, ListaUnica), % Elimina duplicados
     length(Todos, Total),
-    length(ConocenPais, Conocen),
-    (Total > 0 -> Porcentaje is (Conocen * 100) / Total ; Porcentaje = 0),
-    Lista = ConocenPais.
+    length(ListaUnica, Conocen),
+    (Total > 0 -> Porcentaje is (Conocen * 100) / Total ; Porcentaje = 0).
 % --- FUNCIONES GENERALES ---
 
 % 5. ¿Cuántas horas ha viajado Ana? (detalle por tramo y total)
