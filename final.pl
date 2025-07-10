@@ -25,6 +25,7 @@ vuelo(china, australia, 1300, 12).
 vuelo(australia, brasil, 1500, 15).
 vuelo(australia, peru, 1400, 15).
 vuelo(india, china, 700, 6).
+vuelo(francia, india, 900, 10).
 vuelo(brasil, eeuu, 900, 8).
 
 % --- Datos de viajes: viaje(Viajero, PaisOrigen, [ListaDePaisesVisitadosIncluyendoOrigen]).
