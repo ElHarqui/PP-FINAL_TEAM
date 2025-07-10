@@ -215,7 +215,7 @@ agregar_punto_viaje(Viajero, NuevoPais) :-
     write('Punto de viaje agregado exitosamente.'), nl.
 
 agregar_punto_viaje(Viajero, NuevoPais) :-
-    viaje(Viajero, Origen, ListaVieja),
+    viaje(Viajero, _, ListaVieja),
     last(ListaVieja, Ultimo),
     (   (\+ vuelo(Ultimo, NuevoPais, _, _), \+ vuelo(NuevoPais, Ultimo, _, _))
     ;   (\+ vuelo(NuevoPais, _, _, _), \+ vuelo(_, NuevoPais, _, _))
