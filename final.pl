@@ -110,11 +110,21 @@ sabe_todos_los_idiomas(_, []).
 sabe_todos_los_idiomas(Persona, [Idioma|Resto]) :-
     sabe_idioma(Persona, Idioma),
     sabe_todos_los_idiomas(Persona, Resto).
-    
-idiomas_requeridos(Viajero, IdiomasUnicos) :-
+
+idiomas_tramo(Viajero, IdiomasUnicos) :-
     viaje(Viajero, _, PaisesVisitados), % Obtiene la lista de países visitados por el Viajero
     findall(Idioma, (member(Pais, PaisesVisitados), idioma_nativo(Pais, Idioma)), TodosLosIdiomas), % Encuentra todos los idiomas nativos de esos países
     list_to_set(TodosLosIdiomas, IdiomasUnicos). % Elimina duplicados para obtener una lista única de idiomas
+
+idiomas_a_aprender(Viajero, IdiomasPendientes) :-
+    viaje(Viajero, _, PaisesVisitados), % Obtiene la lista de países visitados por el Viajero
+    findall(IdiomaPais, (member(Pais, PaisesVisitados), idioma_nativo(Pais, IdiomaPais)), TodosLosIdiomasVisitados),
+    list_to_set(TodosLosIdiomasVisitados, IdiomasUnicosVisitados), % Idiomas de los países visitados, sin duplicados
+
+    idiomas_totales(Viajero, IdiomasQueSabe), % Obtiene todos los idiomas que el Viajero ya conoce
+    
+    % Calcula la diferencia entre los idiomas de los países visitados y los que ya sabe
+    subtract(IdiomasUnicosVisitados, IdiomasQueSabe, IdiomasPendientes).
 
 listar_paises(PaisesUnicos) :-
    findall(Pais, (vuelo(Pais, _, _, _) ; vuelo(_, Pais, _, _)), TodosLosPaises),
