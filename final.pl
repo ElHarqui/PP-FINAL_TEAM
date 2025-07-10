@@ -217,10 +217,13 @@ agregar_punto_viaje(Viajero, NuevoPais) :-
 agregar_punto_viaje(Viajero, NuevoPais) :-
     viaje(Viajero, _, ListaVieja),
     last(ListaVieja, Ultimo),
-    (   (\+ vuelo(Ultimo, NuevoPais, _, _), \+ vuelo(NuevoPais, Ultimo, _, _))
-    ;   (\+ vuelo(NuevoPais, _, _, _), \+ vuelo(_, NuevoPais, _, _))
-    ),
-    write('No existe un vuelo entre '), write(Ultimo), write(' y '), write(NuevoPais), write(' o el país no está registrado en vuelos.'), nl, fail.
+    (\+ vuelo(Ultimo, NuevoPais, _, _), \+ vuelo(NuevoPais, Ultimo, _, _)),
+    write('No existe un vuelo entre '), write(Ultimo), write(' y '), write(NuevoPais), nl, !, fail.
+agregar_punto_viaje(Viajero, NuevoPais) :-
+    viaje(Viajero, _, ListaVieja),
+    last(ListaVieja, _),
+    (\+ vuelo(NuevoPais, _, _, _), \+ vuelo(_, NuevoPais, _, _)),
+    write('El país '), write(NuevoPais), write(' no está registrado en vuelos.'), nl, !, fail.
 
 
 % Agregar un nuevo viaje: solo persona y lugar de origen
