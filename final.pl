@@ -91,7 +91,9 @@ hereda_idioma_natal(Hijo, Idioma):-
 idiomas_totales(Persona, IdiomasFinales):-
     idioma_natal(Persona, IdiomaNatal),
     findall(IdiomaHeredado, hereda_idioma_natal(Persona, IdiomaHeredado), IdiomasHeredados),
-    append(IdiomasAprendidos, IdiomasHeredados),
+    % Si en el futuro se agregan idiomas aprendidos, incluirlos aquí:
+    IdiomasAprendidos = [],
+    append(IdiomasHeredados, IdiomasAprendidos, OtrosIdiomas),
     ListaConDuplicados = [IdiomaNatal | OtrosIdiomas],
     list_to_set(ListaConDuplicados, IdiomasFinales).
 
