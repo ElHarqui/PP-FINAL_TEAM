@@ -1,19 +1,15 @@
-% 2025-I
-
-% Desarrolle un programa en PROLOG que en base a la imagen considere;
-% -	Un viajero sale de un país a conocer diferentes países del mundo con la idea de retornar al país de donde partió.
-% -	Cada vuelo (digamos Perú- Brasil) tiene un mismo costo y duración para todos los clientes, cada vuelo entre países diferentes tiene diferente costo y duración. 
-% -	Los viajeros pueden visitar de manera consecutiva tantos países como deseen y si desean retornar a su país.
-% -	En base a dichas condiciones responda las siguientes preguntas;
-
-% 1.	¿Quiénes han salido de viaje y aun no regresan?
-% 2.	¿Cuánto han gastado los que han salido de Perú?
-% 3.	¿Qué países han visitado los que han salido de Perú?
-% 4.	¿Qué porcentaje de los viajeros conocen La India?
-% 5.	¿Cuántas horas ha viajado Ana?
-% 6.	Agregar una o varias condiciones y plantee y responda una pregunta
-
-% filepath: d:\WORKSPACE\PP\EXAMEN FINAL\PP\final.pl
+% =============================================================
+% PROLOG - PROGRAMA GENERAL DE VIAJES Y GASTOS ENTRE PAÍSES
+% =============================================================
+% Modela viajeros, vuelos, gastos, recorridos, idiomas, géneros, continentes y consultas generales.
+% Autor: [Tu Nombre]
+% Fecha: 2025-I
+% -------------------------------------------------------------
+% Un viajero sale de un país a conocer diferentes países del mundo con la idea de retornar o no a su país de origen.
+% Cada vuelo entre países tiene un costo y duración fijos para todos los viajeros.
+% Los viajeros pueden visitar cualquier cantidad de países y decidir si retornan o no.
+% El sistema responde preguntas generales y permite agregar dinámicamente datos.
+% -------------------------------------------------------------
 % --- Datos de vuelos: vuelo(Origen, Destino, Costo, DuracionHoras).
 vuelo(peru, brasil, 500, 5).
 vuelo(brasil, india, 900, 12).
@@ -179,13 +175,28 @@ viajeros_visitaron_paises_especificos(Viajero, Pais1, Pais2) :-
 
 % 2. ¿Cuánto han gastado los que han salido de un PaísOrigen específico? (detalle por tramo y total)
 
-% Devuelve una lista con el detalle de gasto de todos los viajeros que salieron de un país de origen
-gasto_detallado_lista(PaisOrigen, Lista) :-
+
+
+% Versión que imprime bonito el detalle de gasto de todos los viajeros y el total
+gasto_detallado_lista(PaisOrigen) :-
     findall(
-        Viajero-Tramos-GastoTotal,
-        (viaje(Viajero, PaisOrigen, L), tramos_y_gastos(L, Tramos, GastoTotal)),
+        Viajero-Tramos-GastoViajero,
+        (viaje(Viajero, PaisOrigen, L), tramos_y_gastos(L, Tramos, GastoViajero)),
         Lista
-    ).
+    ),
+    findall(GastoViajero,
+        (viaje(Viajero, PaisOrigen, L), tramos_y_gastos(L, _, GastoViajero)),
+        Gastos
+    ),
+    sumlist(Gastos, GastoTotalTodos),
+    writeln('==== Gasto detallado de viajeros que salieron de '), write(PaisOrigen), writeln(' ===='),
+    forall(member(Viajero-Tramos-Gasto, Lista), (
+        write('Viajero: '), write(Viajero), nl,
+        write('  Tramos: '), write(Tramos), nl,
+        write('  Gasto total: '), write(Gasto), nl,
+        writeln('---------------------------------')
+    )),
+    write('Gasto total de todos los viajeros: '), writeln(GastoTotalTodos).
 
 % Mantener el predicado individual para compatibilidad, pero sugerir el uso del de lista
 gasto_detallado(Viajero, PaisOrigen, Tramos, GastoTotal) :-
@@ -384,13 +395,13 @@ PREGUNTAS Y CONSULTAS DE EJEMPLO
 1. ¿Quiénes han salido de viaje y aun no regresan y en qué país están?
    ?- no_regresan_lista(Lista).
 
-
-
 2. ¿Cuánto han gastado los que han salido de un país específico?
-   ?- gasto_detallado_lista(PaisOrigen, Lista).
-   % Ejemplo: ?- gasto_detallado_lista(peru, Lista).
+   ?- gasto_detallado_lista(PaisOrigen).
+   % Ejemplo: ?- gasto_detallado_lista(peru).
 
-   % (También puedes usar gasto_detallado(Viajero, PaisOrigen, Tramos, GastoTotal) para un resultado individual, pero se recomienda el de lista para obtener todos de una vez)
+   % (También puedes usar gasto_detallado_lista(PaisOrigen, Lista, GastoTotalTodos) para obtener los datos en variables, o gasto_detallado(Viajero, PaisOrigen, Tramos, GastoViajero) para un resultado individual)
+
+   % (También puedes usar gasto_detallado(Viajero, PaisOrigen, Tramos, GastoViajero) para un resultado individual, pero se recomienda el de lista para obtener todos de una vez y el total general)
 
 3. ¿Qué países han visitado los que han salido de un país específico?
    ?- paises_visitados_por_origen(Viajero, PaisOrigen, PaisesUnicos).
