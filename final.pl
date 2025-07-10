@@ -34,7 +34,7 @@ vuelo(brasil, eeuu, 900, 8).
 viaje(ana, peru, [peru, brasil, india, francia]). % No regresa
 viaje(juan, peru, [peru, chile, india, francia, peru]). % Regresa
 viaje(luis, brasil, [brasil, india, francia, china, australia, brasil]). % Regresa
-viaje(maria, peru, [peru, eeuu, francia, china, india, australia, peru]). % Regresa
+viaje(maria, peru, [peru, eeuu, francia, china, india, peru]). % Regresa
 viaje(carla, chile, [chile, brasil, eeuu, francia, india]). % No regresa
 
 % --- Nuevos hechos: género(Viajero, Genero).
