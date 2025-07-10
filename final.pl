@@ -2,7 +2,7 @@
 % PROLOG - PROGRAMA GENERAL DE VIAJES Y GASTOS ENTRE PAÍSES
 % =============================================================
 % Modela viajeros, vuelos, gastos, recorridos, idiomas, géneros, continentes y consultas generales.
-% Autor: [Tu Nombre]
+% Autor: Sebastian Peralta, Andres Ordoñez
 % Fecha: 2025-I
 % -------------------------------------------------------------
 % Un viajero sale de un país a conocer diferentes países del mundo con la idea de retornar o no a su país de origen.
