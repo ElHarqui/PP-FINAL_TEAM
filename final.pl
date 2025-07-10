@@ -200,22 +200,33 @@ agregar_vuelo(Origen, Destino, Costo, Duracion) :-
     \+ vuelo(Origen, Destino, _, _),
     assertz(vuelo(Origen, Destino, Costo, Duracion)).
 
+
+
 % Agregar un nuevo punto de viaje a un viajero existente (al final de la lista)
+% Solo si NuevoPais existe como origen o destino en algún vuelo
 agregar_punto_viaje(Viajero, NuevoPais) :-
     viaje(Viajero, Origen, ListaVieja),
     last(ListaVieja, Ultimo),
-    % Vuelo bidireccional
     (vuelo(Ultimo, NuevoPais, _, _) ; vuelo(NuevoPais, Ultimo, _, _)),
-    % Vuelo unidireccional
-    % vuelo(Ultimo, NuevoPais, _, _), % Solo permite si hay vuelo directo
+    (vuelo(NuevoPais, _, _, _) ; vuelo(_, NuevoPais, _, _)), % NuevoPais debe ser origen o destino de algún vuelo
     append(ListaVieja, [NuevoPais], ListaNueva),
     retract(viaje(Viajero, Origen, ListaVieja)),
-    assertz(viaje(Viajero, Origen, ListaNueva)).
+    assertz(viaje(Viajero, Origen, ListaNueva)),
+    write('Punto de viaje agregado exitosamente.'), nl.
 
-% Agregar un nuevo viaje completo para un viajero
-agregar_viaje(Viajero, Origen, ListaPaises) :-
+agregar_punto_viaje(Viajero, NuevoPais) :-
+    viaje(Viajero, Origen, ListaVieja),
+    last(ListaVieja, Ultimo),
+    (   (\+ vuelo(Ultimo, NuevoPais, _, _), \+ vuelo(NuevoPais, Ultimo, _, _))
+    ;   (\+ vuelo(NuevoPais, _, _, _), \+ vuelo(_, NuevoPais, _, _))
+    ),
+    write('No existe un vuelo entre '), write(Ultimo), write(' y '), write(NuevoPais), write(' o el país no está registrado en vuelos.'), nl, fail.
+
+
+% Agregar un nuevo viaje: solo persona y lugar de origen
+agregar_viajero(Viajero, Origen) :-
     \+ viaje(Viajero, _, _),
-    assertz(viaje(Viajero, Origen, ListaPaises)).
+    assertz(viaje(Viajero, Origen, [Origen])).
 
 % Agregar un nuevo género para un viajero
 agregar_genero(Viajero, Genero) :-
@@ -231,7 +242,7 @@ agregar_continente(Pais, Continente) :-
 % Ejemplo de uso:
 % ?- agregar_vuelo(peru, mexico, 800, 7).
 % ?- agregar_punto_viaje(ana, china).
-% ?- agregar_viaje(sofia, peru, [peru, brasil, india, china, australia, peru]).
+% ?- agregar_viajero(sofia, peru).
 % ?- agregar_genero(sofia, femenino).
 % ?- agregar_continente(mexico, america_norte).
 
