@@ -121,30 +121,15 @@ no_regresan_detalle(Viajero, PaisActual) :-
     last(Lista, PaisActual),
     PaisOrigen \= PaisActual.
 
-% 2. ¿Cuánto han gastado los que han salido de Perú? (detalle por tramo y total)
-gasto_peru_detallado(Viajero, Tramos, GastoTotal) :-
-    viaje(Viajero, peru, Lista),
-    tramos_y_gastos(Lista, Tramos, GastoTotal).
 
+% --- FUNCIONES GENERALES ---
+
+% Cálculo de tramos y gasto total para cualquier viajero y país de origen
 tramos_y_gastos([_], [], 0).
 tramos_y_gastos([A,B|R], [(A,B,Costo)|Tramos], Total) :-
     (vuelo(A,B,Costo,_) ; vuelo(B,A,Costo,_)),
     tramos_y_gastos([B|R], Tramos, Subtotal),
     Total is Subtotal + Costo.
-
-% 3. ¿Qué países han visitado los que han salido de Perú? (únicos, sin repetir)
-paises_visitados_peru(Viajero, PaisesUnicos) :-
-    viaje(Viajero, peru, Lista),
-    list_to_set(Lista, PaisesUnicos).
-
-% 4. ¿Qué porcentaje de los viajeros conocen La India? (con lista de nombres)
-porcentaje_india(Porcentaje, Lista) :-
-    findall(V, viaje(V, _, _), Todos),
-    findall(V, (viaje(V, _, L), member(india, L)), ConocenIndia),
-    length(Todos, Total),
-    length(ConocenIndia, Conocen),
-    (Total > 0 -> Porcentaje is (Conocen * 100) / Total ; Porcentaje = 0),
-    Lista = ConocenIndia.
 
 % 5. ¿Cuántas horas ha viajado Ana? (detalle por tramo y total)
 horas_viajadas_detallado(Viajero, Tramos, HorasTotal) :-
@@ -157,11 +142,11 @@ tramos_y_horas([A,B|R], [(A,B,Horas)|Tramos], Total) :-
     tramos_y_horas([B|R], Tramos, Subtotal),
     Total is Subtotal + Horas.
 
-% 6. Nueva condición: ¿Quiénes han visitado China y Australia en el mismo viaje?
-china_y_australia(Viajero) :-
+% 6. Nueva condición general: ¿Quiénes han visitado dos países específicos en el mismo viaje?
+viajeros_visitaron_paises_especificos(Viajero, Pais1, Pais2) :-
     viaje(Viajero, _, Lista),
-    member(china, Lista),
-    member(australia, Lista).
+    member(Pais1, Lista),
+    member(Pais2, Lista).
 
 % Respuesta dinámica a la 2, 3, 4, y 6
 
@@ -280,7 +265,6 @@ agregar_punto_viaje(Viajero, NuevoPais) :-
     (\+ vuelo(NuevoPais, _, _, _), \+ vuelo(_, NuevoPais, _, _)),
     write('El país '), write(NuevoPais), write(' no está registrado en vuelos.'), nl, !, fail.
 
-
 % Agregar un nuevo viaje: solo persona y lugar de origen
 agregar_viajero(Viajero, Origen) :-
     \+ viaje(Viajero, _, _),
@@ -355,38 +339,92 @@ viajero_paso_por(Viajero, Pais1, Pais2) :-
 % Verifica si un viajero regresó a su punto de origen
 viajero_regreso_origen(Viajero) :-
     viaje(Viajero, Origen, Lista),
-    last(Lista, Origen).
+last(Lista, Origen).
 
-% Devuelve la lista de viajeros que hicieron un viaje circular (salieron y regresaron al país de origen)
-viajeros_viaje_circular(Lista) :-
-    findall(Viajero, viajero_regreso_origen(Viajero), Lista).
+% =====================
+% CONSULTAS Y PREGUNTAS EJEMPLO (AL FINAL DEL ARCHIVO)
+% =====================
 
-% Consulta para la nueva pregunta 6: ¿Qué viajeros han visitado países en más de un continente?
-% ?- viajeros_multi_continente(Viajero).
+/*
+=====================
+PREGUNTAS Y CONSULTAS DE EJEMPLO
+=====================
 
-% Consulta para la nueva funcionalidad: Porcentaje de género que llegaron a un país
-% Ejemplo: ¿Qué porcentaje de viajeros femeninos y masculinos han visitado India?
-% ?- porcentaje_genero_llegan_pais(india, PorcentajeFemenino, PorcentajeMasculino, ListaFemenino, ListaMasculino).
+1. ¿Quiénes han salido de viaje y aun no regresan?
+   ?- no_regresan_detalle(Viajero, PaisActual).
 
-% ¿Quiénes han visitado todos los continentes?
-% Primero, obtén la lista de todos los continentes:
-% ?- findall(C, continente(_, C), L), list_to_set(L, Todos), continentes_visitados(V, CV), sort(CV, CVS), sort(Todos, TS), CVS = TS.
 
-% ¿Quién visitó más países?
-% ?- findall(N-V, (viaje(V, _, L), list_to_set(L, S), length(S, N)), P), sort(P, SP), reverse(SP, [Max-Viajero|_]).
+2. ¿Cuánto han gastado los que han salido de un país específico?
+   ?- gasto_detallado(Viajero, PaisOrigen, Tramos, GastoTotal).
 
-% ¿Quién ha pasado más de una vez por un país?
-% ?- viaje(V, _, L), select(P, L, R), member(P, R).
+3. ¿Qué países han visitado los que han salido de un país específico?
+   ?- paises_visitados_por_origen(Viajero, PaisOrigen, PaisesUnicos).
 
-% ¿Qué países nunca han sido visitados?
-% ?- listar_paises(Todos), findall(P, (viaje(_, _, L), member(P, L)), Visitados), list_to_set(Visitados, SetV), subtract(Todos, SetV, NoVisitados).
+4. ¿Qué porcentaje de los viajeros conocen un país específico?
+   ?- porcentaje_viajeros_conocen_pais(Pais, Porcentaje, Lista).
 
-% ¿Cuál es el país más visitado?
-% ?- findall(P, (viaje(_, _, L), member(P, L)), Todos), msort(Todos, S), clumped(S, Clumps), sort(2, @>=, Clumps, [Max-Count|_]).
+5. ¿Cuántas horas ha viajado un viajero específico?
+   ?- horas_viajadas_detallado(Viajero, Tramos, HorasTotal).
 
-% ¿Quién hizo viaje circular y cuántos países distintos visitó?
-% ?- viaje(V, O, L), last(L, O), list_to_set(L, S), length(S, N).
+6. ¿Quiénes han visitado dos países específicos en el mismo viaje?
+   ?- viajeros_visitaron_paises_especificos(Viajero, Pais1, Pais2).
 
-% ¿Cuántos viajeros femeninos y masculinos hay?
-% ?- findall(V, genero(V, femenino), Fems), length(Fems, NF), findall(V, genero(V, masculino), Macs), length(Macs, NM).
+7. ¿Cuántos viajeros han visitado más de 3 países?
+   ?- viaje(Viajero, _, Lista), list_to_set(Lista, Set), length(Set, N), N > 3.
+
+8. ¿Cuál es el país final de cada viajero?
+   ?- viaje(Viajero, _, Lista), last(Lista, PaisFinal).
+
+9. ¿Cuántos vuelos ha tomado cada viajero?
+   ?- viaje(Viajero, _, Lista), length(Lista, N), Vuelos is N-1.
+
+10. ¿Quiénes han pasado por Francia?
+    ?- viaje(Viajero, _, Lista), member(francia, Lista).
+
+11. ¿Qué viajeros han pasado por un país específico?
+    ?- viajero_paso_por(Viajero, Pais).
+
+12. ¿Qué viajeros han pasado por dos países específicos en el mismo viaje?
+    ?- viajero_paso_por(Viajero, Pais1, Pais2).
+
+13. ¿Quiénes han regresado a su país de origen? (viaje circular)
+    ?- viajero_regreso_origen(Viajero).
+    ?- viajeros_viaje_circular(Lista).
+
+14. ¿Qué viajeros han visitado países en más de un continente?
+    ?- viajeros_multi_continente(Viajero).
+
+15. Porcentaje de género que llegaron a un país (ejemplo con India):
+    ?- porcentaje_genero_llegan_pais(india, PorcentajeFemenino, PorcentajeMasculino, ListaFemenino, ListaMasculino).
+
+16. ¿Quiénes han visitado todos los continentes?
+    Primero, obtén la lista de todos los continentes:
+    ?- findall(C, continente(_, C), L), list_to_set(L, Todos), continentes_visitados(V, CV), sort(CV, CVS), sort(Todos, TS), CVS = TS.
+
+17. ¿Quién visitó más países?
+    ?- findall(N-V, (viaje(V, _, L), list_to_set(L, S), length(S, N)), P), sort(P, SP), reverse(SP, [Max-Viajero|_]).
+
+18. ¿Quién ha pasado más de una vez por un país?
+    ?- viaje(V, _, L), select(P, L, R), member(P, R).
+
+19. ¿Qué países nunca han sido visitados?
+    ?- listar_paises(Todos), findall(P, (viaje(_, _, L), member(P, L)), Visitados), list_to_set(Visitados, SetV), subtract(Todos, SetV, NoVisitados).
+
+20. ¿Cuál es el país más visitado?
+    ?- findall(P, (viaje(_, _, L), member(P, L)), Todos), msort(Todos, S), clumped(S, Clumps), sort(2, @>=, Clumps, [Max-Count|_]).
+
+21. ¿Quién hizo viaje circular y cuántos países distintos visitó?
+    ?- viaje(V, O, L), last(L, O), list_to_set(L, S), length(S, N).
+
+22. ¿Cuántos viajeros femeninos y masculinos hay?
+    ?- findall(V, genero(V, femenino), Fems), length(Fems, NF), findall(V, genero(V, masculino), Macs), length(Macs, NM).
+
+23. Ejemplo de uso de agregar hechos dinámicos:
+    ?- agregar_vuelo(peru, mexico, 800, 7).
+    ?- agregar_punto_viaje(ana, china).
+    ?- agregar_viajero(sofia, peru).
+    ?- agregar_genero(sofia, femenino).
+    ?- agregar_continente(mexico, america_norte).
+
+*/
 
