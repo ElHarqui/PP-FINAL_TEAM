@@ -27,6 +27,7 @@ vuelo(australia, peru, 1400, 15).
 vuelo(india, china, 700, 6).
 vuelo(francia, india, 900, 10).
 vuelo(brasil, eeuu, 900, 8).
+vuelo(chile, brasil, 600, 6).
 
 % --- Datos de viajes: viaje(Viajero, PaisOrigen, [ListaDePaisesVisitadosIncluyendoOrigen]).
 viaje(ana, peru, [peru, brasil, india, francia]). % No regresa
@@ -145,7 +146,7 @@ no_regresan_lista(Lista) :-
 % Cálculo de tramos y gasto total para cualquier viajero y país de origen
 tramos_y_gastos([_], [], 0).
 tramos_y_gastos([A,B|R], [(A,B,Costo)|Tramos], Total) :-
-    (vuelo(A,B,Costo,_) ; vuelo(B,A,Costo,_)),
+    vuelo_bidireccional(A, B, Costo, _),
     tramos_y_gastos([B|R], Tramos, Subtotal),
     Total is Subtotal + Costo.
 
@@ -201,7 +202,7 @@ horas_viajadas_detallado(Viajero, Tramos, HorasTotal) :-
 
 tramos_y_horas([_], [], 0).
 tramos_y_horas([A,B|R], [(A,B,Horas)|Tramos], Total) :-
-    (vuelo(A,B,_,Horas) ; vuelo(B,A,_,Horas)),
+    vuelo_bidireccional(A, B, _, Horas),
     tramos_y_horas([B|R], Tramos, Subtotal),
     Total is Subtotal + Horas.
 
@@ -292,7 +293,7 @@ agregar_vuelo(Origen, Destino, Costo, Duracion) :-
 agregar_punto_viaje(Viajero, NuevoPais) :-
     viaje(Viajero, Origen, ListaVieja),
     last(ListaVieja, Ultimo),
-    (vuelo(Ultimo, NuevoPais, _, _) ; vuelo(NuevoPais, Ultimo, _, _)),
+    vuelo_bidireccional(Ultimo, NuevoPais, _, _),
     (vuelo(NuevoPais, _, _, _) ; vuelo(_, NuevoPais, _, _)), % NuevoPais debe ser origen o destino de algún vuelo
     append(ListaVieja, [NuevoPais], ListaNueva),
     retract(viaje(Viajero, Origen, ListaVieja)),
@@ -302,7 +303,7 @@ agregar_punto_viaje(Viajero, NuevoPais) :-
 agregar_punto_viaje(Viajero, NuevoPais) :-
     viaje(Viajero, _, ListaVieja),
     last(ListaVieja, Ultimo),
-    (\+ vuelo(Ultimo, NuevoPais, _, _), \+ vuelo(NuevoPais, Ultimo, _, _)),
+    \+ vuelo_bidireccional(Ultimo, NuevoPais, _, _),
     write('No existe un vuelo entre '), write(Ultimo), write(' y '), write(NuevoPais), nl, !, fail.
 agregar_punto_viaje(Viajero, NuevoPais) :-
     viaje(Viajero, _, ListaVieja),
@@ -385,6 +386,12 @@ viajero_paso_por(Viajero, Pais1, Pais2) :-
 viajero_regreso_origen(Viajero) :-
     viaje(Viajero, Origen, Lista),
 last(Lista, Origen).
+
+% --- Predicado auxiliar para vuelos bidireccionales ---
+vuelo_bidireccional(A, B, Costo, Duracion) :-
+    vuelo(A, B, Costo, Duracion).
+vuelo_bidireccional(A, B, Costo, Duracion) :-
+    vuelo(B, A, Costo, Duracion).
 
 % =====================
 % CONSULTAS Y PREGUNTAS EJEMPLO (AL FINAL DEL ARCHIVO)
