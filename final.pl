@@ -138,8 +138,7 @@ no_regresan_detalle(Viajero, PaisActual) :-
 no_regresan_lista(Lista) :-
     findall(Viajero-PaisActual, no_regresan_detalle(Viajero, PaisActual), Lista).
 
-
-% --- FUNCIONES GENERALES ---
+% 2. ¿Cuánto han gastado los que han salido de un PaísOrigen específico? (detalle por tramo y total)
 
 % Cálculo de tramos y gasto total para cualquier viajero y país de origen
 tramos_y_gastos([_], [], 0).
@@ -147,35 +146,6 @@ tramos_y_gastos([A,B|R], [(A,B,Costo)|Tramos], Total) :-
     (vuelo(A,B,Costo,_) ; vuelo(B,A,Costo,_)),
     tramos_y_gastos([B|R], Tramos, Subtotal),
     Total is Subtotal + Costo.
-
-% 5. ¿Cuántas horas ha viajado Ana? (detalle por tramo y total)
-horas_viajadas_detallado(Viajero, Tramos, HorasTotal) :-
-    viaje(Viajero, _, Lista),
-    tramos_y_horas(Lista, Tramos, HorasTotal).
-
-tramos_y_horas([_], [], 0).
-tramos_y_horas([A,B|R], [(A,B,Horas)|Tramos], Total) :-
-    (vuelo(A,B,_,Horas) ; vuelo(B,A,_,Horas)),
-    tramos_y_horas([B|R], Tramos, Subtotal),
-    Total is Subtotal + Horas.
-
-% 6. Nueva condición general: ¿Quiénes han visitado dos países específicos en el mismo viaje?
-viajeros_visitaron_paises_especificos(Viajero, Pais1, Pais2) :-
-    viaje(Viajero, _, Lista),
-    member(Pais1, Lista),
-    member(Pais2, Lista).
-
-% Respuesta dinámica a la 2, 3, 4, y 6
-
-% --- Predicados dinámicos generales para las preguntas ---
-:- dynamic gasto_detallado/4.
-:- dynamic paises_visitados_por_origen/3.
-:- dynamic porcentaje_viajeros_conocen_pais/3.
-:- dynamic viajeros_visitaron_paises_especificos/3.
-
-% 2. ¿Cuánto han gastado los que han salido de un PaísOrigen específico? (detalle por tramo y total)
-
-
 
 % Versión que imprime bonito el detalle de gasto de todos los viajeros y el total
 gasto_detallado_lista(PaisOrigen) :-
@@ -216,6 +186,33 @@ porcentaje_viajeros_conocen_pais(Pais, Porcentaje, Lista) :-
     length(ConocenPais, Conocen),
     (Total > 0 -> Porcentaje is (Conocen * 100) / Total ; Porcentaje = 0),
     Lista = ConocenPais.
+% --- FUNCIONES GENERALES ---
+
+% 5. ¿Cuántas horas ha viajado Ana? (detalle por tramo y total)
+horas_viajadas_detallado(Viajero, Tramos, HorasTotal) :-
+    viaje(Viajero, _, Lista),
+    tramos_y_horas(Lista, Tramos, HorasTotal).
+
+tramos_y_horas([_], [], 0).
+tramos_y_horas([A,B|R], [(A,B,Horas)|Tramos], Total) :-
+    (vuelo(A,B,_,Horas) ; vuelo(B,A,_,Horas)),
+    tramos_y_horas([B|R], Tramos, Subtotal),
+    Total is Subtotal + Horas.
+
+% 6. Nueva condición general: ¿Quiénes han visitado dos países específicos en el mismo viaje?
+viajeros_visitaron_paises_especificos(Viajero, Pais1, Pais2) :-
+    viaje(Viajero, _, Lista),
+    member(Pais1, Lista),
+    member(Pais2, Lista).
+
+% Respuesta dinámica a la 2, 3, 4, y 6
+
+% --- Predicados dinámicos generales para las preguntas ---
+:- dynamic gasto_detallado/4.
+:- dynamic paises_visitados_por_origen/3.
+:- dynamic porcentaje_viajeros_conocen_pais/3.
+:- dynamic viajeros_visitaron_paises_especificos/3.
+
 
 % Predicado auxiliar para obtener los continentes visitados por un viajero
 continentes_visitados(Viajero, ContinentesUnicos) :-
