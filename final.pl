@@ -89,7 +89,7 @@ idiomas_totales(Persona, IdiomasFinales):-
     findall(IdiomaHeredado, hereda_idioma_natal(Persona, IdiomaHeredado), IdiomasHeredados),
     % Si en el futuro se agregan idiomas aprendidos, incluirlos aquí:
     IdiomasAprendidos = [],
-    append(IdiomasHeredados, IdiomasAprendidos, OtrosIdiomas),
+    append(IdiomasAprendidos, IdiomasHeredados, OtrosIdiomas),
     ListaConDuplicados = [IdiomaNatal | OtrosIdiomas],
     list_to_set(ListaConDuplicados, IdiomasFinales).
 
@@ -106,6 +106,11 @@ sabe_todos_los_idiomas(_, []).
 sabe_todos_los_idiomas(Persona, [Idioma|Resto]) :-
     sabe_idioma(Persona, Idioma),
     sabe_todos_los_idiomas(Persona, Resto).
+    
+idiomas_requeridos(Viajero, IdiomasUnicos) :-
+    viaje(Viajero, _, PaisesVisitados), % Obtiene la lista de países visitados por el Viajero
+    findall(Idioma, (member(Pais, PaisesVisitados), idioma_nativo(Pais, Idioma)), TodosLosIdiomas), % Encuentra todos los idiomas nativos de esos países
+    list_to_set(TodosLosIdiomas, IdiomasUnicos). % Elimina duplicados para obtener una lista única de idiomas
 
 listar_paises(PaisesUnicos) :-
    findall(Pais, (vuelo(Pais, _, _, _) ; vuelo(_, Pais, _, _)), TodosLosPaises),
