@@ -2,7 +2,7 @@
 % PROLOG - PROGRAMA GENERAL DE VIAJES Y GASTOS ENTRE PAÍSES
 % =============================================================
 % Modela viajeros, vuelos, gastos, recorridos, idiomas, géneros, continentes y consultas generales.
-% Autor: [Tu Nombre]
+% Autor: Sebastian Peralta, Andres Ordoñez
 % Fecha: 2025-I
 % -------------------------------------------------------------
 % Un viajero sale de un país a conocer diferentes países del mundo con la idea de retornar o no a su país de origen.
@@ -22,6 +22,7 @@ vuelo(peru, eeuu, 1000, 8).
 vuelo(eeuu, francia, 1100, 9).
 vuelo(francia, china, 1200, 11).
 vuelo(china, australia, 1300, 12).
+vuelo(australia, brasil, 1500, 15).
 vuelo(australia, peru, 1400, 15).
 vuelo(india, china, 700, 6).
 vuelo(brasil, eeuu, 900, 8).
