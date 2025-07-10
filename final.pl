@@ -189,7 +189,7 @@ gasto_detallado_lista(PaisOrigen) :-
         Gastos
     ),
     sumlist(Gastos, GastoTotalTodos),
-    writeln('==== Gasto detallado de viajeros que salieron de '), write(PaisOrigen), writeln(' ===='),
+    write('==== Gasto detallado de viajeros que salieron de '), write(PaisOrigen), writeln(' ===='),
     forall(member(Viajero-Tramos-Gasto, Lista), (
         write('Viajero: '), write(Viajero), nl,
         write('  Tramos: '), write(Tramos), nl,
