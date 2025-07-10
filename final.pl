@@ -66,6 +66,10 @@ no_regresan_detalle(Viajero, PaisActual) :-
     last(Lista, PaisActual),
     PaisOrigen \= PaisActual.
 
+% Devuelve una lista de todos los viajeros y su país actual que no han regresado
+no_regresan_lista(Lista) :-
+    findall(Viajero-PaisActual, no_regresan_detalle(Viajero, PaisActual), Lista).
+
 
 % --- FUNCIONES GENERALES ---
 
@@ -102,6 +106,16 @@ viajeros_visitaron_paises_especificos(Viajero, Pais1, Pais2) :-
 :- dynamic viajeros_visitaron_paises_especificos/3.
 
 % 2. ¿Cuánto han gastado los que han salido de un PaísOrigen específico? (detalle por tramo y total)
+
+% Devuelve una lista con el detalle de gasto de todos los viajeros que salieron de un país de origen
+gasto_detallado_lista(PaisOrigen, Lista) :-
+    findall(
+        Viajero-Tramos-GastoTotal,
+        (viaje(Viajero, PaisOrigen, L), tramos_y_gastos(L, Tramos, GastoTotal)),
+        Lista
+    ).
+
+% Mantener el predicado individual para compatibilidad, pero sugerir el uso del de lista
 gasto_detallado(Viajero, PaisOrigen, Tramos, GastoTotal) :-
     viaje(Viajero, PaisOrigen, Lista),
     tramos_y_gastos(Lista, Tramos, GastoTotal).
@@ -295,12 +309,16 @@ last(Lista, Origen).
 PREGUNTAS Y CONSULTAS DE EJEMPLO
 =====================
 
-1. ¿Quiénes han salido de viaje y aun no regresan?
-   ?- no_regresan_detalle(Viajero, PaisActual).
+1. ¿Quiénes han salido de viaje y aun no regresan y en qué país están?
+   ?- no_regresan_lista(Lista).
+
 
 
 2. ¿Cuánto han gastado los que han salido de un país específico?
-   ?- gasto_detallado(Viajero, PaisOrigen, Tramos, GastoTotal).
+   ?- gasto_detallado_lista(PaisOrigen, Lista).
+   % Ejemplo: ?- gasto_detallado_lista(peru, Lista).
+
+   % (También puedes usar gasto_detallado(Viajero, PaisOrigen, Tramos, GastoTotal) para un resultado individual, pero se recomienda el de lista para obtener todos de una vez)
 
 3. ¿Qué países han visitado los que han salido de un país específico?
    ?- paises_visitados_por_origen(Viajero, PaisOrigen, PaisesUnicos).
