@@ -122,6 +122,7 @@ idiomas_tramo(Viajero, IdiomasUnicos) :-
     findall(Idioma, (member(Pais, PaisesVisitados), idioma_nativo(Pais, Idioma)), TodosLosIdiomas),
     list_to_set(TodosLosIdiomas, IdiomasUnicos).
 
+% 6. Diga que traductores requirio un viajero
 idiomas_traductores_requiere(Viajero, IdiomasPendientes) :-
     viaje(Viajero, _, PaisesVisitados),
     findall(IdiomaPais, (member(Pais, PaisesVisitados), idioma_nativo(Pais, IdiomaPais)), TodosLosIdiomasVisitados),
