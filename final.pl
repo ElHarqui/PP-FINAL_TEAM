@@ -22,6 +22,7 @@ vuelo(peru, eeuu, 1000, 8).
 vuelo(eeuu, francia, 1100, 9).
 vuelo(francia, china, 1200, 11).
 vuelo(china, australia, 1300, 12).
+vuelo(australia, brasil, 1500, 15).
 vuelo(australia, peru, 1400, 15).
 vuelo(india, china, 700, 6).
 vuelo(brasil, eeuu, 900, 8).
