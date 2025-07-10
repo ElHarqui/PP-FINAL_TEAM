@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa de Rutas de Viajeros</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for Leaflet tooltips and popups to integrate with Tailwind-like aesthetics */
+        .leaflet-tooltip {
+            background: rgba(0,0,0,0.8) !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 0.25rem !important; /* rounded-sm */
+            padding: 0.25rem 0.5rem !important; /* px-2 py-1 */
+            font-size: 0.75rem !important; /* text-xs */
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2) !important;
+        }
+
+        .leaflet-popup-content-wrapper {
+            border-radius: 0.75rem !important; /* rounded-xl */
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05) !important; /* shadow-lg */
+        }
+
+        .leaflet-popup-content {
+            font-family: 'Inter', sans-serif !important; /* Consistent font */
+        }
+
+        /* Ensure map takes full height of its container */
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+        /* Custom marker styling */
+        .custom-marker {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem; /* text-base */
+            border: 2px solid white; /* border-2 border-white */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3); /* shadow-md */
+        }
+    </style>
+</head>
+<body class="font-sans m-0 p-0 bg-gradient-to-br from-indigo-500 to-purple-700 min-h-screen flex flex-col items-center py-8">
+    <div class="container max-w-6xl mx-auto px-5">
+        <div class="header text-center text-white mb-8">
+            <h1 class="text-4xl font-extrabold mb-2 drop-shadow-lg">🗺️ Rutas de Viajeros</h1>
+            <p class="text-lg opacity-90">Explora las aventuras de cada viajero por el mundo</p>
+        </div>
+
+        <div class="controls flex flex-wrap justify-center gap-4 mb-8">
+            <div id="traveler-buttons" class="flex flex-wrap gap-3 items-center">
+                <!-- Traveler buttons will be rendered here dynamically -->
+            </div>
+            <div class="w-px h-8 bg-white bg-opacity-30 mx-4 hidden md:block"></div>
+            <div class="flex flex-wrap gap-3 items-center">
+                <button class="clear-btn bg-gradient-to-br from-orange-400 to-red-500 text-white px-6 py-3 rounded-full font-bold shadow-lg hover:scale-105 transition-all duration-300 ease-in-out" onclick="toggleFlightLines()">✈️ Mostrar/Ocultar Vuelos</button>
+                <button class="clear-btn bg-gradient-to-br from-orange-400 to-red-500 text-white px-6 py-3 rounded-full font-bold shadow-lg hover:scale-105 transition-all duration-300 ease-in-out" onclick="clearMap()">🗑️ Limpiar</button>
+            </div>
+        </div>
+
+        <div class="map-container bg-white rounded-xl shadow-2xl overflow-hidden h-[600px] relative mb-8">
+            <div id="map"></div>
+        </div>
+
+        <div class="info-panel bg-white p-6 rounded-xl shadow-xl mb-8">
+            <div id="default-info" class="text-center text-gray-600">
+                <h3 class="text-2xl font-semibold mb-2">Bienvenido al Mapa de Rutas</h3>
+                <p class="text-base">Selecciona un viajero para ver su ruta completa, países visitados, costos y estadísticas del viaje.</p>
+            </div>
+            <!-- Traveler route info will be rendered here dynamically -->
+            <div id="traveler-info-panels"></div>
+        </div>
+
+        <!-- Add New Traveler Section -->
+        <div class="add-traveler-section bg-white p-6 rounded-xl shadow-xl mb-8">
+            <h3 class="text-2xl font-semibold text-gray-800 mb-4">➕ Agregar Nuevo Viajero</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="travelerName" class="block text-gray-700 text-sm font-bold mb-2">Nombre del Viajero:</label>
+                    <input type="text" id="travelerName" class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Ej: Sofía">
+                </div>
+                <div>
+                    <label for="countrySelect" class="block text-gray-700 text-sm font-bold mb-2">Selecciona País para la Ruta:</label>
+                    <div class="flex gap-2">
+                        <select id="countrySelect" class="shadow border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                            <!-- Options will be populated by JavaScript -->
+                        </select>
+                        <button onclick="addCountryToTravelerRoute()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-200 ease-in-out">
+                            Agregar
+                        </button>
+                    </div>
+                    <label class="block text-gray-700 text-sm font-bold mt-4 mb-2">Ruta del Viajero (Ordenada):</label>
+                    <ul id="selectedTravelerCountriesList" class="bg-gray-100 p-3 rounded-lg border border-gray-200 min-h-[50px]">
+                        <!-- Ordered list of countries will be displayed here -->
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-center">
+                <button onclick="addNewTraveler()" class="bg-gradient-to-br from-green-500 to-teal-600 text-white px-8 py-3 rounded-full font-bold shadow-lg hover:scale-105 transition-all duration-300 ease-in-out">
+                    Guardar Viajero
+                </button>
+            </div>
+        </div>
+
+        <!-- Add New Country Section -->
+        <div class="add-country-section bg-white p-6 rounded-xl shadow-xl">
+            <h3 class="text-2xl font-semibold text-gray-800 mb-4">📍 Agregar Nuevo País y Ruta</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                    <label for="newCountryName" class="block text-gray-700 text-sm font-bold mb-2">Nombre del País:</label>
+                    <input type="text" id="newCountryName" class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Ej: Japón">
+                </div>
+                <div>
+                    <label for="newCountryLat" class="block text-gray-700 text-sm font-bold mb-2">Latitud:</label>
+                    <input type="number" step="any" id="newCountryLat" class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Ej: 35.6895">
+                </div>
+                <div>
+                    <label for="newCountryLng" class="block text-gray-700 text-sm font-bold mb-2">Longitud:</label>
+                    <input type="number" step="any" id="newCountryLng" class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Ej: 139.6917">
+                </div>
+                <div>
+                    <label for="relatedCountrySelect" class="block text-gray-700 text-sm font-bold mb-2">Relacionar con País Existente:</label>
+                    <select id="relatedCountrySelect" class="shadow border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                        <!-- Options will be populated by JavaScript -->
+                    </select>
+                </div>
+                <div>
+                    <label for="newFlightCost" class="block text-gray-700 text-sm font-bold mb-2">Costo del Vuelo (USD):</label>
+                    <input type="number" step="1" id="newFlightCost" class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Ej: 850">
+                </div>
+                <div>
+                    <label for="newFlightDuration" class="block text-gray-700 text-sm font-bold mb-2">Duración del Vuelo (Horas):</label>
+                    <input type="number" step="1" id="newFlightDuration" class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Ej: 10">
+                </div>
+            </div>
+            <div class="mt-6 flex justify-center">
+                <button onclick="addNewCountryAndFlight()" class="bg-gradient-to-br from-blue-500 to-indigo-600 text-white px-8 py-3 rounded-full font-bold shadow-lg hover:scale-105 transition-all duration-300 ease-in-out">
+                    Guardar País y Ruta
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Global variables
+        let map;
+        let currentRoutePolyline = null;
+        let currentTravelerMarkers = [];
+        let allCountryMarkers = []; // To store all country markers for re-drawing
+        let flightLines = [];
+        let flightLinesVisible = true;
+
+        // Initial flight data
+        const flights = [
+            {from: 'peru', to: 'brasil', cost: 500, duration: 5},
+            {from: 'brasil', to: 'india', cost: 900, duration: 12},
+            {from: 'india', to: 'francia', cost: 800, duration: 10},
+            {from: 'francia', to: 'peru', cost: 700, duration: 11},
+            {from: 'peru', to: 'chile', cost: 200, duration: 2},
+            {from: 'chile', to: 'india', cost: 950, duration: 13},
+            {from: 'peru', to: 'india', cost: 1200, duration: 18},
+            {from: 'peru', to: 'eeuu', cost: 1000, duration: 8},
+            {from: 'eeuu', to: 'francia', cost: 1100, duration: 9},
+            {from: 'francia', to: 'china', cost: 1200, duration: 11},
+            {from: 'china', to: 'australia', cost: 1300, duration: 12},
+            {from: 'australia', to: 'peru', cost: 1400, duration: 15},
+            {from: 'india', to: 'china', cost: 700, duration: 6},
+            {from: 'brasil', to: 'eeuu', cost: 900, duration: 8}
+        ];
+
+        // Country coordinates (can be extended)
+        let countryCoordinates = {
+            peru: [-9.19, -75.0152],
+            brasil: [-14.235, -51.9253],
+            india: [20.5937, 78.9629],
+            francia: [46.6034, 1.8883],
+            chile: [-35.6751, -71.5430],
+            eeuu: [37.0902, -95.7129],
+            china: [35.8617, 104.1954],
+            australia: [-25.2744, 133.7751]
+        };
+
+        // Traveler data (can be extended)
+        let travelers = {
+            ana: {
+                name: "Ana",
+                origin: "peru",
+                route: ["peru", "brasil", "india", "francia"],
+                returned: false,
+                color: "#FF6B6B", // Red
+                stats: { countries: 4, cost: 2200, hours: 27, status: "En Viaje" }
+            },
+            juan: {
+                name: "Juan",
+                origin: "peru",
+                route: ["peru", "chile", "india", "francia", "peru"],
+                returned: true,
+                color: "#4ECDC4", // Teal
+                stats: { countries: 4, cost: 2650, hours: 36, status: "Regresó" }
+            },
+            luis: {
+                name: "Luis",
+                origin: "brasil",
+                route: ["brasil", "india", "francia", "china", "australia", "brasil"],
+                returned: true,
+                color: "#45B7D1", // Light Blue
+                stats: { countries: 5, cost: 4200, hours: 52, status: "Regresó" }
+            },
+            maria: {
+                name: "María",
+                origin: "peru",
+                route: ["peru", "eeuu", "francia", "china", "india", "australia", "peru"],
+                returned: true,
+                color: "#96CEB4", // Mint Green
+                stats: { countries: 6, cost: 6200, hours: 69, status: "Regresó" }
+            },
+            carla: {
+                name: "Carla",
+                origin: "chile",
+                route: ["chile", "brasil", "eeuu", "francia", "india"],
+                returned: false,
+                color: "#FFEAA7", // Light Yellow
+                stats: { countries: 5, cost: 3850, hours: 38, status: "En Viaje" }
+            }
+        };
+
+        // Temporary route for adding new travelers
+        let currentNewTravelerRoute = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeMap();
+            renderAllCountryMarkers(); // Draw initial country markers
+            renderTravelerButtons();
+            populateCountrySelects(); // Populates both country dropdowns
+            renderTravelerInfoPanels(); // Render info panels for existing travelers
+        });
+
+        function initializeMap() {
+            map = L.map('map').setView([20, 0], 2);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            drawFlightLines(); // Draw initial flight lines
+        }
+
+        function renderAllCountryMarkers() {
+            // Clear existing country markers before re-drawing
+            allCountryMarkers.forEach(marker => map.removeLayer(marker));
+            allCountryMarkers = [];
+
+            Object.entries(countryCoordinates).forEach(([countryKey, coords]) => {
+                const countryMarker = L.circleMarker(coords, {
+                    radius: 6,
+                    fillColor: '#3498db',
+                    color: '#2c3e50',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).addTo(map);
+                
+                // Capitalize the first letter for display
+                const displayName = countryKey.charAt(0).toUpperCase() + countryKey.slice(1);
+                countryMarker.bindTooltip(displayName, {
+                    permanent: false,
+                    direction: 'top',
+                    className: 'country-tooltip'
+                });
+                allCountryMarkers.push(countryMarker);
+            });
+        }
+
+        function drawFlightLines() {
+            flightLines.forEach(line => map.removeLayer(line)); // Clear existing lines
+            flightLines = [];
+
+            flights.forEach(flight => {
+                const fromCoords = countryCoordinates[flight.from];
+                const toCoords = countryCoordinates[flight.to];
+                
+                if (fromCoords && toCoords) {
+                    const line = L.polyline([fromCoords, toCoords], {
+                        color: '#95a5a6',
+                        weight: 1,
+                        opacity: 0.4,
+                        className: 'flight-line'
+                    }).addTo(map);
+                    
+                    line.bindPopup(`
+                        <div class="text-center font-sans min-w-[200px]">
+                            <h4 class="text-lg font-semibold mb-2 text-gray-800">✈️ Vuelo Disponible</h4>
+                            <div class="flex justify-between items-center my-2">
+                                <span class="font-bold text-blue-500">${flight.from.toUpperCase()}</span>
+                                <span class="text-gray-400">➡️</span>
+                                <span class="font-bold text-red-500">${flight.to.toUpperCase()}</span>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-md my-2">
+                                <div class="flex justify-between my-1">
+                                    <span>💰 Costo:</span>
+                                    <strong>$${flight.cost}</strong>
+                                </div>
+                                <div class="flex justify-between my-1">
+                                    <span>⏱️ Duración:</span>
+                                    <strong>${flight.duration}h</strong>
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                    
+                    line.on('mouseover', function() {
+                        this.setStyle({
+                            color: '#3498db',
+                            weight: 3,
+                            opacity: 0.8
+                        });
+                    });
+                    
+                    line.on('mouseout', function() {
+                        this.setStyle({
+                            color: '#95a5a6',
+                            weight: 1,
+                            opacity: 0.4
+                        });
+                    });
+                    
+                    flightLines.push(line);
+                }
+            });
+            if (!flightLinesVisible) {
+                flightLines.forEach(line => line.remove());
+            }
+        }
+
+        function toggleFlightLines() {
+            flightLinesVisible = !flightLinesVisible;
+            flightLines.forEach(line => {
+                if (flightLinesVisible) {
+                    line.addTo(map);
+                } else {
+                    line.remove();
+                }
+            });
+        }
+
+        function renderTravelerButtons() {
+            const travelerButtonsContainer = document.getElementById('traveler-buttons');
+            travelerButtonsContainer.innerHTML = ''; // Clear existing buttons
+
+            for (const key in travelers) {
+                const traveler = travelers[key];
+                const button = document.createElement('button');
+                button.className = `traveler-btn bg-gradient-to-br from-red-400 to-pink-500 text-white px-6 py-3 rounded-full font-bold shadow-lg hover:scale-105 transition-all duration-300 ease-in-out`;
+                button.onclick = () => showRoute(key);
+                button.textContent = `${traveler.name}`; // No emoji here, emoji is in HTML
+                travelerButtonsContainer.appendChild(button);
+            }
+        }
+
+        function renderTravelerInfoPanels() {
+            const infoPanelsContainer = document.getElementById('traveler-info-panels');
+            infoPanelsContainer.innerHTML = ''; // Clear existing panels
+
+            for (const key in travelers) {
+                const traveler = travelers[key];
+                const panelDiv = document.createElement('div');
+                panelDiv.id = `route-info-${key}`;
+                panelDiv.className = `route-info hidden`; // Hidden by default
+
+                const countriesListHtml = traveler.route.map(countryKey => {
+                    // Capitalize first letter for display
+                    const displayName = countryKey.charAt(0).toUpperCase() + countryKey.slice(1);
+                    return `<span class="country-tag bg-gray-100 px-3 py-1 rounded-full text-sm text-gray-700">${displayName}</span>`;
+                }).join('');
+
+                panelDiv.innerHTML = `
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-4">🌟 Ruta de ${traveler.name}</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                        <div class="stat-card bg-gradient-to-br from-indigo-500 to-purple-700 text-white p-4 rounded-lg text-center">
+                            <h4 class="text-sm opacity-90 mb-2">Estado</h4>
+                            <div class="text-xl font-bold">${traveler.stats.status}</div>
+                        </div>
+                        <div class="stat-card bg-gradient-to-br from-indigo-500 to-purple-700 text-white p-4 rounded-lg text-center">
+                            <h4 class="text-sm opacity-90 mb-2">Países Visitados</h4>
+                            <div class="text-xl font-bold">${traveler.stats.countries}</div>
+                        </div>
+                        <div class="stat-card bg-gradient-to-br from-indigo-500 to-purple-700 text-white p-4 rounded-lg text-center">
+                            <h4 class="text-sm opacity-90 mb-2">Costo Total</h4>
+                            <div class="text-xl font-bold">$${traveler.stats.cost.toLocaleString()}</div>
+                        </div>
+                        <div class="stat-card bg-gradient-to-br from-indigo-500 to-purple-700 text-white p-4 rounded-lg text-center">
+                            <h4 class="text-sm opacity-90 mb-2">Horas de Vuelo</h4>
+                            <div class="text-xl font-bold">${traveler.stats.hours}h</div>
+                        </div>
+                    </div>
+                    <div class="countries-list flex flex-wrap gap-2 mt-4">
+                        ${countriesListHtml}
+                    </div>
+                `;
+                infoPanelsContainer.appendChild(panelDiv);
+            }
+        }
+
+        function showRoute(travelerKey) {
+            if (!map) {
+                console.error('Mapa no inicializado');
+                return;
+            }
+            clearMapElements(); // Clear only map elements, not info panels or buttons
+
+            const traveler = travelers[travelerKey];
+            if (!traveler) return;
+
+            // Update buttons active state
+            document.querySelectorAll('.traveler-btn').forEach(btn => btn.classList.remove('bg-gradient-to-br', 'from-teal-400', 'to-green-500'));
+            document.querySelectorAll('.traveler-btn').forEach(btn => btn.classList.add('from-red-400', 'to-pink-500')); // Reset to default
+            const clickedButton = document.querySelector(`[onclick="showRoute('${travelerKey}')"]`);
+            if (clickedButton) {
+                clickedButton.classList.remove('from-red-400', 'to-pink-500');
+                clickedButton.classList.add('from-teal-400', 'to-green-500'); // Active state
+            }
+
+            // Show traveler info panel
+            document.getElementById('default-info').classList.add('hidden');
+            document.querySelectorAll('.route-info').forEach(info => info.classList.add('hidden'));
+            document.getElementById(`route-info-${travelerKey}`).classList.remove('hidden');
+
+            // Create markers and lines
+            const routeCoordinates = [];
+            const bounds = L.latLngBounds();
+
+            traveler.route.forEach((country, index) => {
+                const coords = countryCoordinates[country];
+                if (coords) {
+                    routeCoordinates.push(coords);
+                    bounds.extend(coords);
+
+                    const isStart = index === 0;
+                    const isEnd = index === traveler.route.length - 1;
+                    const isCurrent = !traveler.returned && isEnd;
+                    
+                    let iconColor = traveler.color;
+                    let iconSymbol = '📍';
+                    
+                    if (isStart) {
+                        iconSymbol = '🏠';
+                        iconColor = '#28a745'; // Green
+                    } else if (isCurrent) {
+                        iconSymbol = '🧳';
+                        iconColor = '#ffc107'; // Yellow
+                    } else if (isEnd && traveler.returned) {
+                        iconSymbol = '🏁';
+                        iconColor = '#dc3545'; // Red
+                    }
+
+                    const marker = L.marker(coords, {
+                        icon: L.divIcon({
+                            className: 'custom-marker rounded-full',
+                            html: `<div style="background: ${iconColor}; color: white; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 16px; border-radius: 50%;"> ${iconSymbol}</div>`,
+                            iconSize: [30, 30],
+                            iconAnchor: [15, 15]
+                        })
+                    }).addTo(map);
+
+                    const displayName = country.charAt(0).toUpperCase() + country.slice(1);
+                    marker.bindPopup(`
+                        <div class="text-center font-sans">
+                            <h4 class="text-lg font-semibold mb-2 text-gray-800">${displayName}</h4>
+                            <p class="my-1 text-gray-600">
+                                ${isStart ? '🏠 Origen' : isCurrent ? '🧳 Ubicación Actual' : isEnd && traveler.returned ? '🏁 Destino Final' : `📍 Parada ${index + 1}`}
+                            </p>
+                            <p class="my-1 text-gray-600 font-bold">Viajero: ${traveler.name}</p>
+                        </div>
+                    `);
+                    
+                    currentTravelerMarkers.push(marker);
+                }
+            });
+
+            // Create route polyline
+            if (routeCoordinates.length > 1) {
+                currentRoutePolyline = L.polyline(routeCoordinates, {
+                    color: traveler.color,
+                    weight: 4,
+                    opacity: 0.8,
+                    dashArray: traveler.returned ? null : '10, 10'
+                }).addTo(map);
+
+                // Add animation to the line
+                currentRoutePolyline.on('add', function() {
+                    const path = this.getElement();
+                    const pathLength = path.getTotalLength();
+                    path.style.strokeDasharray = pathLength + ' ' + pathLength;
+                    path.style.strokeDashoffset = pathLength;
+                    path.style.transition = 'stroke-dashoffset 3s ease-in-out';
+                    setTimeout(() => {
+                        path.style.strokeDashoffset = '0';
+                    }, 100); // Small delay to ensure CSS transition is applied
+                });
+            }
+
+            // Adjust map view
+            if (bounds.isValid()) {
+                map.fitBounds(bounds, { padding: [50, 50] });
+            }
+        }
+
+        function clearMapElements() {
+            if (!map) {
+                console.error('Mapa no inicializado');
+                return;
+            }
+            if (currentRoutePolyline) {
+                map.removeLayer(currentRoutePolyline);
+                currentRoutePolyline = null;
+            }
+            
+            currentTravelerMarkers.forEach(marker => map.removeLayer(marker));
+            currentTravelerMarkers = [];
+        }
+
+        function clearMap() {
+            clearMapElements();
+            
+            document.querySelectorAll('.traveler-btn').forEach(btn => btn.classList.remove('bg-gradient-to-br', 'from-teal-400', 'to-green-500'));
+            document.querySelectorAll('.traveler-btn').forEach(btn => btn.classList.add('from-red-400', 'to-pink-500'));
+            
+            document.getElementById('default-info').classList.remove('hidden');
+            document.querySelectorAll('.route-info').forEach(info => info.classList.add('hidden'));
+            
+            map.setView([20, 0], 2);
+        }
+
+        function populateCountrySelects() {
+            const countrySelect = document.getElementById('countrySelect');
+            const relatedCountrySelect = document.getElementById('relatedCountrySelect');
+            
+            // Clear existing options
+            countrySelect.innerHTML = ''; 
+            relatedCountrySelect.innerHTML = '';
+
+            // Add a default "Select a country" option
+            const defaultOption = document.createElement('option');
+            defaultOption.value = "";
+            defaultOption.textContent = "Seleccionar país...";
+            defaultOption.disabled = true;
+            defaultOption.selected = true;
+            countrySelect.appendChild(defaultOption.cloneNode(true));
+            relatedCountrySelect.appendChild(defaultOption.cloneNode(true));
+
+
+            for (const key in countryCoordinates) {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = key.charAt(0).toUpperCase() + key.slice(1); // Capitalize for display
+                countrySelect.appendChild(option.cloneNode(true)); // Clone for the second select
+                relatedCountrySelect.appendChild(option);
+            }
+        }
+
+        function addCountryToTravelerRoute() {
+            const countrySelect = document.getElementById('countrySelect');
+            const selectedCountryKey = countrySelect.value;
+            const selectedCountryName = countrySelect.options[countrySelect.selectedIndex].text;
+            const selectedTravelerCountriesList = document.getElementById('selectedTravelerCountriesList');
+
+            if (!selectedCountryKey) {
+                console.warn('Por favor, selecciona un país para agregar a la ruta.');
+                return;
+            }
+
+            // Allow adding the country if:
+            // 1. The route is empty (first country).
+            // 2. The selected country is the same as the first country in the route AND the route has more than one country (i.e., it's a return trip).
+            // 3. The selected country is NOT the same as the first country AND it's not already in the route.
+            const isFirstCountry = currentNewTravelerRoute.length === 0;
+            const isReturnTrip = currentNewTravelerRoute.length > 0 && selectedCountryKey === currentNewTravelerRoute[0];
+            const isDuplicateIntermediate = currentNewTravelerRoute.includes(selectedCountryKey) && !isReturnTrip;
+
+            if (isDuplicateIntermediate) {
+                console.warn(`El país "${selectedCountryName}" ya ha sido agregado a la ruta (no se permiten duplicados intermedios).`);
+                return;
+            }
+
+            currentNewTravelerRoute.push(selectedCountryKey);
+
+            const listItem = document.createElement('li');
+            listItem.textContent = selectedCountryName;
+            listItem.className = "bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm mb-1 inline-block mr-1";
+            selectedTravelerCountriesList.appendChild(listItem);
+
+            // Reset the select to the default option
+            countrySelect.value = "";
+            console.log(`País "${selectedCountryName}" agregado a la ruta.`);
+        }
+
+        function addNewCountryAndFlight() {
+            const newCountryNameInput = document.getElementById('newCountryName');
+            const newCountryLatInput = document.getElementById('newCountryLat');
+            const newCountryLngInput = document.getElementById('newCountryLng');
+            const relatedCountrySelect = document.getElementById('relatedCountrySelect');
+            const newFlightCostInput = document.getElementById('newFlightCost');
+            const newFlightDurationInput = document.getElementById('newFlightDuration');
+
+            const name = newCountryNameInput.value.trim().toLowerCase();
+            const lat = parseFloat(newCountryLatInput.value);
+            const lng = parseFloat(newCountryLngInput.value);
+            const relatedCountry = relatedCountrySelect.value;
+            const cost = parseInt(newFlightCostInput.value);
+            const duration = parseInt(newFlightDurationInput.value);
+
+            if (!name || isNaN(lat) || isNaN(lng) || !relatedCountry || isNaN(cost) || isNaN(duration)) {
+                console.error('Por favor, completa todos los campos para agregar el nuevo país y su ruta.');
+                return;
+            }
+
+            if (countryCoordinates[name]) {
+                console.warn(`El país "${name}" ya existe. No se agregará de nuevo.`);
+                // Optionally, you could ask the user if they want to update it.
+                // For now, we'll just return.
+                return;
+            }
+
+            // Add the new country to coordinates
+            countryCoordinates[name] = [lat, lng];
+            
+            // Add the new flight relationship
+            flights.push({ from: name, to: relatedCountry, cost: cost, duration: duration });
+            // Also add a reverse flight for bidirectional travel if desired, or let the user add it manually
+            // flights.push({ from: relatedCountry, to: name, cost: cost, duration: duration });
+
+            renderAllCountryMarkers(); // Re-draw all country markers including the new one
+            drawFlightLines(); // Re-draw all flight lines including the new one
+            populateCountrySelects(); // Update both country selection dropdowns
+
+            // Clear form fields
+            newCountryNameInput.value = '';
+            newCountryLatInput.value = '';
+            newCountryLngInput.value = '';
+            relatedCountrySelect.value = ""; // Reset to default
+            newFlightCostInput.value = '';
+            newFlightDurationInput.value = '';
+
+            console.log(`País "${name}" y ruta con "${relatedCountry}" agregados con éxito.`);
+        }
+
+        function addNewTraveler() {
+            const travelerNameInput = document.getElementById('travelerName');
+            const selectedTravelerCountriesList = document.getElementById('selectedTravelerCountriesList');
+
+            const name = travelerNameInput.value.trim();
+            
+            if (!name) {
+                console.error('Por favor, ingresa un nombre para el viajero.');
+                return;
+            }
+            if (currentNewTravelerRoute.length < 1) {
+                console.error('Por favor, agrega al menos un país a la ruta del viajero.');
+                return;
+            }
+
+            const travelerKey = name.toLowerCase().replace(/\s/g, ''); // Simple key generation
+            if (travelers[travelerKey]) {
+                console.warn(`Ya existe un viajero con el nombre "${name}".`);
+                return;
+            }
+
+            // Determine if the traveler has returned
+            const hasReturned = currentNewTravelerRoute.length > 1 &&
+                                currentNewTravelerRoute[0] === currentNewTravelerRoute[currentNewTravelerRoute.length - 1];
+
+            // Calculate dummy stats for the new traveler
+            const numCountries = currentNewTravelerRoute.length;
+            const dummyCost = numCountries * 700 + Math.floor(Math.random() * 500);
+            const dummyHours = numCountries * 8 + Math.floor(Math.random() * 10);
+            
+            const newTraveler = {
+                name: name,
+                origin: currentNewTravelerRoute[0], // First country as origin
+                route: [...currentNewTravelerRoute], // Use the ordered list
+                returned: hasReturned, // Set returned status based on the route
+                color: `#${Math.floor(Math.random()*16777215).toString(16)}`, // Random color
+                stats: {
+                    countries: numCountries,
+                    cost: dummyCost,
+                    hours: dummyHours,
+                    status: hasReturned ? "Regresó" : "En Viaje"
+                }
+            };
+
+            travelers[travelerKey] = newTraveler;
+            renderTravelerButtons(); // Re-render buttons to include the new traveler
+            renderTravelerInfoPanels(); // Re-render info panels to include the new traveler
+
+            // Clear form and temporary route
+            travelerNameInput.value = '';
+            currentNewTravelerRoute = [];
+            selectedTravelerCountriesList.innerHTML = ''; // Clear the displayed list
+
+            console.log(`Viajero "${name}" agregado con éxito.`);
+            // Optionally, show the new traveler's route immediately
+            // showRoute(travelerKey);
+        }
+    </script>
+</body>
+</html>
