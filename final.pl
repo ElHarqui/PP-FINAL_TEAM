@@ -115,7 +115,7 @@ idiomas_tramo(Viajero, IdiomasUnicos) :-
     findall(Idioma, (member(Pais, PaisesVisitados), idioma_nativo(Pais, Idioma)), TodosLosIdiomas), % Encuentra todos los idiomas nativos de esos países
     list_to_set(TodosLosIdiomas, IdiomasUnicos). % Elimina duplicados para obtener una lista única de idiomas
 
-idiomas_a_aprender(Viajero, IdiomasPendientes) :-
+idiomas_traductores_requiere(Viajero, IdiomasPendientes) :-
     viaje(Viajero, _, PaisesVisitados), % Obtiene la lista de países visitados por el Viajero
     findall(IdiomaPais, (member(Pais, PaisesVisitados), idioma_nativo(Pais, IdiomaPais)), TodosLosIdiomasVisitados),
     list_to_set(TodosLosIdiomasVisitados, IdiomasUnicosVisitados), % Idiomas de los países visitados, sin duplicados
