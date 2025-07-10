@@ -302,10 +302,36 @@ viajero_regreso_origen(Viajero) :-
     viaje(Viajero, Origen, Lista),
     last(Lista, Origen).
 
+% Devuelve la lista de viajeros que hicieron un viaje circular (salieron y regresaron al país de origen)
+viajeros_viaje_circular(Lista) :-
+    findall(Viajero, viajero_regreso_origen(Viajero), Lista).
+
 % Consulta para la nueva pregunta 6: ¿Qué viajeros han visitado países en más de un continente?
 % ?- viajeros_multi_continente(Viajero).
 
 % Consulta para la nueva funcionalidad: Porcentaje de género que llegaron a un país
 % Ejemplo: ¿Qué porcentaje de viajeros femeninos y masculinos han visitado India?
 % ?- porcentaje_genero_llegan_pais(india, PorcentajeFemenino, PorcentajeMasculino, ListaFemenino, ListaMasculino).
+
+% ¿Quiénes han visitado todos los continentes?
+% Primero, obtén la lista de todos los continentes:
+% ?- findall(C, continente(_, C), L), list_to_set(L, Todos), continentes_visitados(V, CV), sort(CV, CVS), sort(Todos, TS), CVS = TS.
+
+% ¿Quién visitó más países?
+% ?- findall(N-V, (viaje(V, _, L), list_to_set(L, S), length(S, N)), P), sort(P, SP), reverse(SP, [Max-Viajero|_]).
+
+% ¿Quién ha pasado más de una vez por un país?
+% ?- viaje(V, _, L), select(P, L, R), member(P, R).
+
+% ¿Qué países nunca han sido visitados?
+% ?- listar_paises(Todos), findall(P, (viaje(_, _, L), member(P, L)), Visitados), list_to_set(Visitados, SetV), subtract(Todos, SetV, NoVisitados).
+
+% ¿Cuál es el país más visitado?
+% ?- findall(P, (viaje(_, _, L), member(P, L)), Todos), msort(Todos, S), clumped(S, Clumps), sort(2, @>=, Clumps, [Max-Count|_]).
+
+% ¿Quién hizo viaje circular y cuántos países distintos visitó?
+% ?- viaje(V, O, L), last(L, O), list_to_set(L, S), length(S, N).
+
+% ¿Cuántos viajeros femeninos y masculinos hay?
+% ?- findall(V, genero(V, femenino), Fems), length(Fems, NF), findall(V, genero(V, masculino), Macs), length(Macs, NM).
 
